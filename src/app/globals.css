@@ -1,26 +1,215 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: #0a0a0a;
+  --color-foreground: #f0f0f0;
+  --color-yonsei: #1a6dff;
+  --color-yonsei-glow: rgba(26, 109, 255, 0.3);
+  --color-korea: #e8193e;
+  --color-korea-glow: rgba(232, 25, 62, 0.3);
+  --color-muted: #6b6b6b;
+  --color-border: #1e1e1e;
+  --color-card: #141414;
+  --color-surface: #1a1a1a;
+  --color-overlay: rgba(0, 0, 0, 0.75);
+  --color-heart: #ff2d55;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.025em;
 }
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ---- Card entrance ---- */
+@keyframes card-rise {
+  0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.animate-card-rise { animation: card-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ---- Modal overlay ---- */
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes overlay-out { from { opacity: 1; } to { opacity: 0; } }
+.animate-overlay-in { animation: overlay-in 0.3s ease-out both; }
+.animate-overlay-out { animation: overlay-out 0.25s ease-in both; }
+
+/* ---- Modal sheet ---- */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(100%) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes sheet-down {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(100%) scale(0.96); }
+}
+@keyframes modal-pop {
+  from { opacity: 0; transform: scale(0.88) translateY(30px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes modal-pop-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.92) translateY(20px); }
+}
+.animate-sheet-up { animation: sheet-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-sheet-down { animation: sheet-down 0.3s cubic-bezier(0.4, 0, 1, 1) both; }
+@media (min-width: 640px) {
+  .animate-sheet-up { animation: modal-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .animate-sheet-down { animation: modal-pop-out 0.3s cubic-bezier(0.4, 0, 1, 1) both; }
+}
+
+/* ---- Vote button pulse ---- */
+@keyframes vote-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.06); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+.animate-vote-pulse { animation: vote-pulse 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ---- Vote particle burst ---- */
+@keyframes particle-burst {
+  0% { opacity: 1; transform: translate(var(--px), var(--py)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(var(--px) * 3.5), calc(var(--py) * 3.5 - 20px)) scale(0); }
+}
+.vote-particle { animation: particle-burst 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ---- Count pop ---- */
+@keyframes count-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.animate-count-pop { animation: count-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ---- Filter pill ---- */
+@keyframes filter-switch {
+  0% { transform: scaleX(0.85); opacity: 0.5; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+.animate-filter-switch { animation: filter-switch 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ---- Header title entrance ---- */
+@keyframes title-reveal {
+  0% { opacity: 0; transform: translateY(-10px); letter-spacing: 0.3em; }
+  100% { opacity: 1; transform: translateY(0); letter-spacing: -0.025em; }
+}
+.animate-title-reveal { animation: title-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ---- Skeleton shimmer ---- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ---- Image reveal on load ---- */
+@keyframes image-reveal {
+  0% { opacity: 0; transform: scale(1.08); filter: blur(8px) saturate(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0) saturate(1); }
+}
+.animate-image-reveal { animation: image-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ===== Instagram-style Heart Double-Tap ===== */
+@keyframes insta-heart {
+  0% { opacity: 0; transform: scale(0) rotate(-15deg); }
+  15% { opacity: 1; transform: scale(1.3) rotate(0deg); }
+  30% { transform: scale(0.9) rotate(0deg); }
+  45% { transform: scale(1.1) rotate(0deg); }
+  60% { opacity: 1; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(0.8) rotate(0deg); }
+}
+.animate-insta-heart { animation: insta-heart 0.9s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes heart-ring {
+  0% { opacity: 0.5; transform: scale(0); border: 3px solid; }
+  100% { opacity: 0; transform: scale(2.5); border: 0.5px solid; }
+}
+.animate-heart-ring { animation: heart-ring 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ===== Bottom Dock ===== */
+@keyframes dock-rise {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-dock-rise { animation: dock-rise 0.6s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes dock-pill-in {
+  0% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.08); }
+  70% { transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-dock-pill-in { animation: dock-pill-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ===== Tab page transition ===== */
+@keyframes page-in {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-page-in { animation: page-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ===== Glow effects ===== */
+.glow-yonsei { box-shadow: 0 0 20px var(--color-yonsei-glow), 0 0 60px var(--color-yonsei-glow); }
+.glow-korea { box-shadow: 0 0 20px var(--color-korea-glow), 0 0 60px var(--color-korea-glow); }
+
+/* ===== Center modal - expand from card ===== */
+@keyframes modal-expand-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  70% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes modal-shrink-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+    filter: blur(6px);
+  }
+}
+@keyframes modal-overlay-in {
+  0% { opacity: 0; backdrop-filter: blur(0); }
+  100% { opacity: 1; backdrop-filter: blur(20px); }
+}
+@keyframes modal-overlay-out {
+  0% { opacity: 1; backdrop-filter: blur(20px); }
+  100% { opacity: 0; backdrop-filter: blur(0); }
+}
+.animate-modal-in { animation: modal-expand-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-modal-out { animation: modal-shrink-out 0.3s cubic-bezier(0.4, 0, 1, 1) both; }
+.animate-modal-overlay-in { animation: modal-overlay-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-modal-overlay-out { animation: modal-overlay-out 0.3s cubic-bezier(0.4, 0, 1, 1) both; }

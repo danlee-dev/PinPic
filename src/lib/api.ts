@@ -1,0 +1,76 @@
+import { createClient } from "@/utils/supabase/client";
+import { PhotoEntry, PhotoWithVotesRow } from "./types";
+
+function getSupabase() {
+  return createClient();
+}
+
+function toPhotoEntry(row: PhotoWithVotesRow): PhotoEntry {
+  return {
+    id: row.id,
+    image_url: row.image_url,
+    nickname: row.nickname,
+    club: row.club ?? undefined,
+    school: row.school,
+    aspect_ratio: row.aspect_ratio,
+    votes: row.votes,
+  };
+}
+
+export async function fetchPhotos(
+  page: number,
+  pageSize: number = 20
+): Promise<PhotoEntry[]> {
+  const supabase = getSupabase();
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error } = await supabase
+    .from("photos_with_votes")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (error) {
+    console.error("Failed to fetch photos:", error);
+    return [];
+  }
+
+  return (data as PhotoWithVotesRow[]).map(toPhotoEntry);
+}
+
+export async function fetchMyVotedIds(): Promise<Set<string>> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new Set();
+
+  const { data, error } = await supabase
+    .from("votes")
+    .select("photo_id")
+    .eq("voter_id", user.id);
+
+  if (error) {
+    console.error("Failed to fetch voted ids:", error);
+    return new Set();
+  }
+
+  return new Set(data.map((v) => v.photo_id));
+}
+
+export async function voteForPhoto(photoId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { error } = await supabase
+    .from("votes")
+    .insert({ photo_id: photoId, voter_id: user.id });
+
+  if (error) {
+    if (error.code === "23505") return false; // Already voted
+    console.error("Failed to vote:", error);
+    return false;
+  }
+
+  return true;
+}
