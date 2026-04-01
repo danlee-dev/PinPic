@@ -3,8 +3,14 @@ import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MVT - Most Valuable Tiger vs Eagle",
-  description: "Yonsei vs Korea University photo voting",
+  title: "PinPic - 연세대 vs 고려대 사진 투표",
+  description: "마음에 드는 사진을 더블탭해서 투표하세요. 연세대 vs 고려대, 당신의 선택은?",
+  openGraph: {
+    title: "PinPic - 연세대 vs 고려대 사진 투표",
+    description: "마음에 드는 사진을 더블탭해서 투표하세요.",
+    siteName: "PinPic",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
