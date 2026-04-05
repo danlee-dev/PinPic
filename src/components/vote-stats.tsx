@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PhotoEntry } from "@/lib/types";
+import { useAuth } from "./auth-provider";
 
 interface VoteStatsProps {
   entries: PhotoEntry[];
@@ -10,6 +11,7 @@ interface VoteStatsProps {
 }
 
 export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
+  const { isAdmin } = useAuth();
   const [animated, setAnimated] = useState(false);
 
   useEffect(() => {
@@ -208,63 +210,77 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
         </div>
       </div>
 
-      {/* Ranking teaser */}
+      {/* Ranking */}
       <div className="mt-6 animate-card-rise" style={{ animationDelay: "0.4s" }}>
         <h3 className="text-sm font-semibold mb-3">인기 순위</h3>
-        <div className="relative">
+        {isAdmin ? (
           <div className="space-y-3">
-            {Array.from({ length: 5 }, (_, i) => {
-              const medalStyles = [
-                "bg-yellow-500/20 text-yellow-400",
-                "bg-gray-400/20 text-gray-300",
-                "bg-amber-600/20 text-amber-400",
-                "text-muted",
-                "text-muted",
-              ];
-              const barWidths = ["w-4/5", "w-3/5", "w-1/2", "w-2/5", "w-1/3"];
-              return (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-2xl p-3 pr-4"
-                  style={{
-                    background: i < 3
-                      ? "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)"
-                      : "rgba(255,255,255,0.03)",
-                    border: `1px solid rgba(255,255,255,${i < 3 ? "0.08" : "0.05"})`,
-                  }}
-                >
-                  <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold ${medalStyles[i]}`}>
-                    {i + 1}
-                  </span>
-                  <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center">
-                    <span className="text-muted text-lg">?</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className={`h-3 ${barWidths[i]} rounded-full bg-white/8 mb-1.5`} />
-                    <div className="h-2 w-12 rounded-full bg-white/5" />
-                  </div>
-                  <div className="text-right">
-                    <div className="h-4 w-6 rounded bg-white/8" />
-                  </div>
-                </div>
-              );
-            })}
+            {[...entries]
+              .sort((a, b) => b.votes - a.votes)
+              .map((entry, i) => {
+                const medalStyles = ["bg-yellow-500/20 text-yellow-400", "bg-gray-400/20 text-gray-300", "bg-amber-600/20 text-amber-400"];
+                return (
+                  <button
+                    key={entry.id}
+                    onClick={() => onPhotoClick(entry)}
+                    className="w-full flex items-center gap-3 rounded-2xl p-3 pr-4 text-left cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                    style={{
+                      background: i < 3 ? "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)" : "rgba(255,255,255,0.03)",
+                      border: `1px solid rgba(255,255,255,${i < 3 ? "0.08" : "0.05"})`,
+                    }}
+                  >
+                    <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold ${i < 3 ? medalStyles[i] : "text-muted"}`}>
+                      {i + 1}
+                    </span>
+                    <img src={entry.thumb_url || entry.image_url} alt={entry.nickname} className="w-11 h-11 rounded-xl object-cover" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{entry.nickname}</p>
+                      <p className={`text-[10px] font-semibold ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                        {entry.school === "yonsei" ? "연세대" : "고려대"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold">{entry.votes}</p>
+                      <p className="text-[9px] text-muted">votes</p>
+                    </div>
+                  </button>
+                );
+              })}
           </div>
-          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-md rounded-2xl"
-            style={{ background: "rgba(10,10,10,0.4)" }}
-          >
-            <div className="text-center px-6">
-              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-neutral-700 flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0110 0v4" />
-                </svg>
+        ) : (
+          <div className="relative">
+            <div className="space-y-3">
+              {Array.from({ length: 5 }, (_, i) => {
+                const medalStyles = ["bg-yellow-500/20 text-yellow-400", "bg-gray-400/20 text-gray-300", "bg-amber-600/20 text-amber-400", "text-muted", "text-muted"];
+                const barWidths = ["w-4/5", "w-3/5", "w-1/2", "w-2/5", "w-1/3"];
+                return (
+                  <div key={i} className="flex items-center gap-3 rounded-2xl p-3 pr-4"
+                    style={{ background: i < 3 ? "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)" : "rgba(255,255,255,0.03)", border: `1px solid rgba(255,255,255,${i < 3 ? "0.08" : "0.05"})` }}>
+                    <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold ${medalStyles[i]}`}>{i + 1}</span>
+                    <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center"><span className="text-muted text-lg">?</span></div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`h-3 ${barWidths[i]} rounded-full bg-white/8 mb-1.5`} />
+                      <div className="h-2 w-12 rounded-full bg-white/5" />
+                    </div>
+                    <div className="text-right"><div className="h-4 w-6 rounded bg-white/8" /></div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center backdrop-blur-md rounded-2xl" style={{ background: "rgba(10,10,10,0.4)" }}>
+              <div className="text-center px-6">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-neutral-700 flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                </div>
+                <p className="text-sm font-bold mb-1">순위는 결과 발표 때 공개됩니다</p>
+                <p className="text-xs text-muted">지금은 투표에 집중하세요!</p>
               </div>
-              <p className="text-sm font-bold mb-1">순위는 결과 발표 때 공개됩니다</p>
-              <p className="text-xs text-muted">지금은 투표에 집중하세요!</p>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

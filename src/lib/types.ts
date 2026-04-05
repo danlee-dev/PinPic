@@ -1,4 +1,5 @@
 export type School = "yonsei" | "korea";
+export type PhotoStatus = "pending" | "approved" | "rejected";
 
 export interface PhotoEntry {
   id: string;
@@ -9,9 +10,9 @@ export interface PhotoEntry {
   school: School;
   aspect_ratio: number;
   votes: number;
+  status?: PhotoStatus;
 }
 
-// DB row from photos table (without votes)
 export interface PhotoRow {
   id: string;
   image_url: string;
@@ -20,10 +21,22 @@ export interface PhotoRow {
   club: string | null;
   school: School;
   aspect_ratio: number;
+  status: PhotoStatus;
   created_at: string;
 }
 
-// DB row from photos_with_votes view
 export interface PhotoWithVotesRow extends PhotoRow {
   votes: number;
+}
+
+export interface VotingPeriod {
+  start: string;
+  end: string;
+}
+
+export interface AdminUser {
+  id: string;
+  user_id: string;
+  email: string;
+  created_at: string;
 }

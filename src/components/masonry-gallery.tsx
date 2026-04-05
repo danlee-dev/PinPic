@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
-import { PhotoEntry, School } from "@/lib/types";
+import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
+import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -12,6 +13,7 @@ import { trackEvent } from "@/lib/analytics";
 import { MyVotes } from "./my-votes";
 import { UserButton } from "./user-button";
 import { LoginPrompt } from "./login-prompt";
+import { AdminPanel } from "./admin-panel";
 
 type Filter = "all" | School;
 
@@ -80,7 +82,7 @@ function MasonryGrid({
 }
 
 export function MasonryGallery() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const colCount = useColCount();
   const [entries, setEntries] = useState<PhotoEntry[]>([]);
   const [page, setPage] = useState(0);
@@ -94,11 +96,25 @@ export function MasonryGallery() {
   const [showLogin, setShowLogin] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [votingPeriod, setVotingPeriod] = useState<VotingPeriod | null>(null);
+  const [showVotingAlert, setShowVotingAlert] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const canVote = isAdmin || isVotingOpen(votingPeriod);
+  const votingStatus = getVotingStatus(votingPeriod);
+
+  useEffect(() => {
+    fetchVotingPeriod().then(setVotingPeriod);
+  }, []);
 
   const handleVote = useCallback(async (id: string) => {
     if (!user) {
       setShowLogin(true);
+      return;
+    }
+
+    if (!canVote) {
+      setShowVotingAlert(true);
       return;
     }
 
@@ -437,12 +453,26 @@ export function MasonryGallery() {
             onPhotoClick={setSelectedEntry}
           />
         )}
+
+        {activeTab === "admin" && isAdmin && <AdminPanel />}
       </div>
+
+      {/* Voting period banner */}
+      {votingStatus !== "during" && !isAdmin && (
+        <div className="fixed top-12 left-0 right-0 z-20 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto bg-surface/95 backdrop-blur-xl text-xs text-muted px-4 py-2 rounded-full border border-border/50 shadow-lg">
+            {votingStatus === "before"
+              ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
+              : "투표가 종료되었습니다"}
+          </div>
+        </div>
+      )}
 
       <BottomDock
         activeTab={activeTab}
         onTabChange={setActiveTab}
         votedCount={votedIds.size}
+        isAdmin={isAdmin}
       />
 
       <PhotoModal
@@ -451,9 +481,45 @@ export function MasonryGallery() {
         onVote={handleVote}
         onUnvote={handleUnvote}
         onClose={() => setSelectedEntry(null)}
+        canVote={canVote}
+        votingStatus={votingStatus}
+        votingPeriod={votingPeriod}
       />
 
       {showLogin && <LoginPrompt onClose={() => setShowLogin(false)} />}
+
+      {showVotingAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowVotingAlert(false)}>
+          <div className="bg-card rounded-3xl p-6 max-w-sm w-full text-center border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-surface flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold mb-1">
+              {votingStatus === "before" ? "아직 투표 기간이 아닙니다" : "투표가 종료되었습니다"}
+            </h3>
+            <p className="text-sm text-muted mb-4">
+              {votingStatus === "before"
+                ? `투표 기간: ${formatKST(votingPeriod?.start)} ~ ${formatKST(votingPeriod?.end)}`
+                : "결과 발표를 기대해주세요!"}
+            </p>
+            <button
+              onClick={() => setShowVotingAlert(false)}
+              className="w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl cursor-pointer active:scale-[0.97] transition-all"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
+}
+
+function formatKST(utcStr?: string): string {
+  if (!utcStr) return "";
+  const d = new Date(utcStr);
+  return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }

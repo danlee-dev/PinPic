@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { PhotoEntry } from "@/lib/types";
+import { PhotoEntry, VotingPeriod } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
 
@@ -11,9 +11,12 @@ interface PhotoModalProps {
   onVote: (id: string) => void;
   onUnvote: (id: string) => void;
   onClose: () => void;
+  canVote?: boolean;
+  votingStatus?: "before" | "during" | "after";
+  votingPeriod?: VotingPeriod | null;
 }
 
-export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoModalProps) {
+export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during" }: PhotoModalProps) {
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -136,8 +139,9 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
 
           {/* Vote button */}
           <button
-            onClick={triggerVote}
-            className={`relative w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-300 cursor-pointer active:scale-[0.97]
+            onClick={canVote ? triggerVote : undefined}
+            className={`relative w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-300
+              ${!canVote ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}
               ${votePulse ? "animate-vote-pulse" : ""}
               ${voted
                 ? "bg-heart text-white shadow-lg shadow-heart/30"
@@ -148,7 +152,9 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
               <svg width="18" height="18" viewBox="0 0 24 24" fill={voted ? "white" : "none"} stroke={voted ? "white" : "currentColor"} strokeWidth="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
-              {voted ? "투표 취소" : "투표하기"}
+              {!canVote
+                ? (votingStatus === "before" ? "투표 기간 전" : "투표 종료")
+                : voted ? "투표 취소" : "투표하기"}
             </span>
           </button>
 

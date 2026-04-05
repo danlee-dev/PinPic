@@ -3,13 +3,15 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { getUser, onAuthStateChange } from "@/lib/auth";
+import { checkIsAdmin } from "@/lib/admin";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, isAdmin: false });
 
 export function useAuth() {
   return useContext(AuthContext);
@@ -18,15 +20,28 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    getUser().then((u) => {
+    getUser().then(async (u) => {
       setUser(u);
+      if (u) {
+        const admin = await checkIsAdmin();
+        setIsAdmin(admin);
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
-    const subscription = onAuthStateChange((u) => {
+    const subscription = onAuthStateChange(async (u) => {
       setUser(u);
+      if (u) {
+        const admin = await checkIsAdmin();
+        setIsAdmin(admin);
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -34,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

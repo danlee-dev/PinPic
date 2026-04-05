@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-export type Tab = "feed" | "stats" | "voted";
+export type Tab = "feed" | "stats" | "voted" | "admin";
 
 interface BottomDockProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   votedCount: number;
+  isAdmin?: boolean;
 }
 
 const tabs: { value: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
@@ -45,7 +46,17 @@ const tabs: { value: Tab; label: string; icon: (active: boolean) => React.ReactN
   },
 ];
 
-export function BottomDock({ activeTab, onTabChange, votedCount }: BottomDockProps) {
+const adminTab = {
+  value: "admin" as Tab,
+  label: "관리",
+  icon: (active: boolean) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  ),
+};
+
+export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin }: BottomDockProps) {
   const seenCountRef = useRef<number | null>(null);
 
   // Set baseline on initial load, then update when visiting voted tab
@@ -67,7 +78,7 @@ export function BottomDock({ activeTab, onTabChange, votedCount }: BottomDockPro
     <div className="fixed bottom-5 inset-x-0 z-40 flex justify-center animate-dock-rise pointer-events-none">
       <nav className="pointer-events-auto">
         <div className="flex items-center gap-0.5 bg-surface/95 backdrop-blur-xl rounded-full px-1.5 py-1.5 shadow-2xl shadow-black/50 border border-border/50">
-          {tabs.map((tab) => {
+          {[...tabs, ...(isAdmin ? [adminTab] : [])].map((tab) => {
             const isActive = activeTab === tab.value;
             return (
               <button
