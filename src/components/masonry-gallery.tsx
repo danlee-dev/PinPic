@@ -297,9 +297,12 @@ export function MasonryGallery() {
                 onClick={() => {
                   const url = typeof window !== "undefined" ? window.location.origin : "";
                   const text = `제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!\n${url}`;
-                  navigator.clipboard.writeText(text).then(() => {
-                    alert("클립보드에 복사되었습니다! 단톡방에 붙여넣기 하세요.");
-                  }).catch(() => {});
+                  if (navigator.share) {
+                    navigator.share({ text }).catch(() => {});
+                  } else {
+                    navigator.clipboard.writeText(text);
+                    alert("링크가 복사되었습니다!");
+                  }
                   trackEvent("share_feed");
                 }}
                 className="relative mt-4 mx-auto px-5 py-2.5 rounded-full text-xs font-semibold text-foreground cursor-pointer transition-all duration-200 active:scale-95 flex items-center gap-2"
