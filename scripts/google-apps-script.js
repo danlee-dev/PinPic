@@ -37,7 +37,7 @@ function onFormSubmit(e) {
     const schoolCode = school.includes("연세") ? "yonsei" : "korea";
     const club = (clubName === "없음" || !clubName) ? null : clubName;
 
-    const fileUrl = getFieldValue(response, "사진");
+    const fileUrl = getFieldValue(response, "업로드");
     if (!fileUrl) {
       Logger.log("사진 URL이 없어서 스킵");
       return;
