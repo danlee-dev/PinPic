@@ -170,33 +170,39 @@ export function MasonryGallery() {
               >
                 <div className="absolute inset-0 pointer-events-none" style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", borderRight: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", borderRadius: "0 0 24px 24px" }} />
 
-              {/* Mini vote bar */}
+              {/* Mini vote bar - left=Korea, right=Yonsei (matching poster) */}
               {entries.length > 0 && (() => {
                 const yVotes = entries.filter(e => e.school === "yonsei").reduce((s, e) => s + e.votes, 0);
                 const kVotes = entries.filter(e => e.school === "korea").reduce((s, e) => s + e.votes, 0);
                 const total = yVotes + kVotes;
-                const yPct = total === 0 ? 0 : Math.round((yVotes / total) * 100);
-                const kPct = total === 0 ? 0 : 100 - yPct;
+                const kPct = total === 0 ? 0 : Math.round((kVotes / total) * 100);
+                const yPct = total === 0 ? 0 : 100 - kPct;
                 return (
-                  <div className="relative mb-5 mx-auto max-w-[280px]">
-                    <div className="flex justify-between mb-1.5 text-[11px] font-bold">
-                      <span className={yPct === 0 ? "text-muted" : "text-yonsei"}>{yPct}%</span>
-                      <span className="text-muted text-[10px]">{(yVotes + kVotes).toLocaleString()}표</span>
-                      <span className={kPct === 0 ? "text-muted" : "text-korea"}>{kPct}%</span>
+                  <div className="relative mb-5 mx-auto max-w-[300px]">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <img src="/korea-logo.png" alt="고려대" className="w-4 h-4 object-contain" />
+                        <span className={`text-[11px] font-bold ${kPct === 0 ? "text-muted" : "text-korea"}`}>{kPct}%</span>
+                      </div>
+                      <span className="text-muted text-[10px]">{total.toLocaleString()}표</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[11px] font-bold ${yPct === 0 ? "text-muted" : "text-yonsei"}`}>{yPct}%</span>
+                        <img src="/yonsei-logo.png" alt="연세대" className="w-4 h-4 rounded-full object-cover" />
+                      </div>
                     </div>
-                    <div className="relative h-6 rounded-full overflow-hidden"
+                    <div className="relative h-7 rounded-full overflow-hidden"
                       style={{
-                        background: yVotes === 0 && kVotes === 0 ? "#2a2a2a"
-                          : yVotes === 0 ? "linear-gradient(to right, #2a2a2a 5%, #e8193e 30%, #e8193e 100%)"
-                          : kVotes === 0 ? "linear-gradient(to right, #1a6dff 0%, #1a6dff 70%, #2a2a2a 95%)"
-                          : `linear-gradient(to right, #1a6dff 0%, #1a6dff ${yPct - 12}%, #3a2a6a ${yPct}%, #6a1a3a ${yPct}%, #e8193e ${yPct + 12}%, #e8193e 100%)`,
+                        background: kVotes === 0 && yVotes === 0 ? "#2a2a2a"
+                          : kVotes === 0 ? `linear-gradient(to right, #2a2a2a 5%, #1a6dff 30%, #1a6dff 100%)`
+                          : yVotes === 0 ? `linear-gradient(to right, #e8193e 0%, #e8193e 70%, #2a2a2a 95%)`
+                          : `linear-gradient(to right, #e8193e 0%, #e8193e ${kPct - 12}%, #6a1a3a ${kPct}%, #3a2a6a ${kPct}%, #1a6dff ${kPct + 12}%, #1a6dff 100%)`,
                         boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
                       }}
                     >
                       <div className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)" }} />
-                      <div className="absolute inset-0 flex items-center justify-between px-2.5">
-                        <span className="text-white text-[10px] font-bold drop-shadow-md">{yVotes}</span>
+                      <div className="absolute inset-0 flex items-center justify-between px-3">
                         <span className="text-white text-[10px] font-bold drop-shadow-md">{kVotes}</span>
+                        <span className="text-white text-[10px] font-bold drop-shadow-md">{yVotes}</span>
                       </div>
                     </div>
                   </div>
