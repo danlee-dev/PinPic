@@ -37,7 +37,7 @@ export function PhotoCard({ entry, index, voted, onClick }: PhotoCardProps) {
   return (
     <div
       ref={ref}
-      className={`w-full mb-3 break-inside-avoid group cursor-pointer select-none
+      className={`w-full mb-3 group cursor-pointer select-none
         ${visible ? "animate-card-rise" : "opacity-0"}`}
       style={{ animationDelay: visible ? `${stagger}s` : undefined }}
       onClick={() => onClick(entry)}

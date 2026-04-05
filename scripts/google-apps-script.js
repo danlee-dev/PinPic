@@ -14,7 +14,7 @@
 // ============================================================
 
 const SUPABASE_URL = "https://qqewkrdaxwsjzclvspbv.supabase.co";
-const SUPABASE_SECRET_KEY = "여기에_시크릿키_입력"; // sb_secret_...
+const SUPABASE_SECRET_KEY = "여기에_키_입력";
 const STORAGE_BUCKET = "photos";
 
 /**
@@ -24,7 +24,6 @@ function onFormSubmit(e) {
   try {
     const response = e.namedValues;
 
-    // 폼 필드 매핑 (폼 질문 제목 기준)
     const school = getFieldValue(response, "학교");
     const clubType = getFieldValue(response, "동아리 소속 여부");
     const clubName = getFieldValue(response, "소속 동아리명");
@@ -35,20 +34,15 @@ function onFormSubmit(e) {
       return;
     }
 
-    // 학교 구분
     const schoolCode = school.includes("연세") ? "yonsei" : "korea";
-
-    // 동아리명 처리
     const club = (clubName === "없음" || !clubName) ? null : clubName;
 
-    // 첨부 파일 가져오기
     const fileUrl = getFieldValue(response, "사진");
     if (!fileUrl) {
       Logger.log("사진 URL이 없어서 스킵");
       return;
     }
 
-    // Google Drive 파일 ID 추출
     const fileId = extractFileId(fileUrl);
     if (!fileId) {
       Logger.log("파일 ID 추출 실패: " + fileUrl);
@@ -58,33 +52,54 @@ function onFormSubmit(e) {
     // Drive에서 파일 가져오기
     const file = DriveApp.getFileById(fileId);
     const blob = file.getBlob();
-    const fileName = file.getName();
     const contentType = blob.getContentType();
     const ext = contentType === "image/png" ? ".png" : ".jpg";
+    const uniqueId = Date.now() + "-" + generateId();
 
-    // Supabase Storage에 업로드
-    const storagePath = "photos/" + Date.now() + "-" + generateId() + ext;
-    const uploadResult = uploadToSupabase(storagePath, blob.getBytes(), contentType);
+    // 1. 원본 업로드
+    const origPath = "photos/" + uniqueId + ext;
+    const origResult = uploadToSupabase(origPath, blob.getBytes(), contentType);
 
-    if (!uploadResult.success) {
-      Logger.log("업로드 실패: " + uploadResult.error);
+    if (!origResult.success) {
+      Logger.log("원본 업로드 실패: " + origResult.error);
       return;
     }
 
-    // Public URL 생성
-    const imageUrl = SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + storagePath;
+    const imageUrl = SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + origPath;
 
-    // photos 테이블에 삽입
-    const insertResult = insertPhoto({
+    // 2. 썸네일 생성 + 업로드
+    var thumbUrl = null;
+    try {
+      var thumbBlob = resizeImage(blob, 800);
+      var thumbPath = "thumbs/" + uniqueId + ".jpg";
+      var thumbResult = uploadToSupabase(thumbPath, thumbBlob.getBytes(), "image/jpeg");
+
+      if (thumbResult.success) {
+        thumbUrl = SUPABASE_URL + "/storage/v1/object/public/" + STORAGE_BUCKET + "/" + thumbPath;
+        Logger.log("썸네일 생성 성공");
+      } else {
+        Logger.log("썸네일 업로드 실패 (원본만 사용): " + thumbResult.error);
+      }
+    } catch (thumbError) {
+      Logger.log("썸네일 생성 실패 (원본만 사용): " + thumbError.toString());
+    }
+
+    // 3. DB에 삽입
+    var photoData = {
       image_url: imageUrl,
       nickname: nickname,
       club: club,
       school: schoolCode,
       aspect_ratio: 1.25,
-    });
+    };
+    if (thumbUrl) {
+      photoData.thumb_url = thumbUrl;
+    }
+
+    var insertResult = insertPhoto(photoData);
 
     if (insertResult.success) {
-      Logger.log("성공: " + nickname + " (" + schoolCode + ")");
+      Logger.log("성공: " + nickname + " (" + schoolCode + ")" + (thumbUrl ? " +thumb" : ""));
     } else {
       Logger.log("DB 삽입 실패: " + insertResult.error);
     }
@@ -95,7 +110,33 @@ function onFormSubmit(e) {
 }
 
 /**
- * namedValues에서 키워드로 필드값 추출 (폼 질문이 정확히 안 맞을 수 있으므로 부분 매칭)
+ * 이미지를 Google Drive 썸네일 기능으로 리사이즈
+ */
+function resizeImage(originalBlob, maxWidth) {
+  // Google Drive에 임시 저장 -> 썸네일 URL로 리사이즈된 이미지 가져오기
+  var tempFile = DriveApp.createFile(originalBlob.setName("temp_resize.jpg"));
+  var tempId = tempFile.getId();
+
+  // Drive API 썸네일 URL 활용
+  var thumbUrl = "https://drive.google.com/thumbnail?id=" + tempId + "&sz=w" + maxWidth;
+
+  var response = UrlFetchApp.fetch(thumbUrl, {
+    headers: { "Authorization": "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  });
+
+  // 임시 파일 삭제
+  tempFile.setTrashed(true);
+
+  if (response.getResponseCode() === 200) {
+    return response.getBlob().setContentType("image/jpeg");
+  }
+
+  throw new Error("썸네일 생성 HTTP 에러: " + response.getResponseCode());
+}
+
+/**
+ * namedValues에서 키워드로 필드값 추출
  */
 function getFieldValue(namedValues, keyword) {
   for (const key in namedValues) {
@@ -111,14 +152,10 @@ function getFieldValue(namedValues, keyword) {
  * Google Drive URL에서 파일 ID 추출
  */
 function extractFileId(url) {
-  // https://drive.google.com/u/0/open?usp=forms_web&id=FILE_ID
   const match1 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
   if (match1) return match1[1];
-
-  // https://drive.google.com/file/d/FILE_ID/view
   const match2 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (match2) return match2[1];
-
   return null;
 }
 
@@ -127,7 +164,6 @@ function extractFileId(url) {
  */
 function uploadToSupabase(path, bytes, contentType) {
   const url = SUPABASE_URL + "/storage/v1/object/" + STORAGE_BUCKET + "/" + path;
-
   const options = {
     method: "post",
     headers: {
@@ -138,13 +174,9 @@ function uploadToSupabase(path, bytes, contentType) {
     payload: bytes,
     muteHttpExceptions: true,
   };
-
   const response = UrlFetchApp.fetch(url, options);
   const code = response.getResponseCode();
-
-  if (code === 200 || code === 201) {
-    return { success: true };
-  }
+  if (code === 200 || code === 201) return { success: true };
   return { success: false, error: response.getContentText() };
 }
 
@@ -153,7 +185,6 @@ function uploadToSupabase(path, bytes, contentType) {
  */
 function insertPhoto(data) {
   const url = SUPABASE_URL + "/rest/v1/photos";
-
   const options = {
     method: "post",
     headers: {
@@ -165,19 +196,12 @@ function insertPhoto(data) {
     payload: JSON.stringify(data),
     muteHttpExceptions: true,
   };
-
   const response = UrlFetchApp.fetch(url, options);
   const code = response.getResponseCode();
-
-  if (code === 200 || code === 201) {
-    return { success: true };
-  }
+  if (code === 200 || code === 201) return { success: true };
   return { success: false, error: response.getContentText() };
 }
 
-/**
- * 랜덤 ID 생성
- */
 function generateId() {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
@@ -202,10 +226,9 @@ function syncAllExisting() {
       namedValues[h] = [row[j].toString()];
     });
 
-    Logger.log("Processing row " + (i + 1) + ": " + namedValues);
+    Logger.log("Processing row " + (i + 1));
     onFormSubmit({ namedValues: namedValues });
 
-    // Rate limit 방지
-    Utilities.sleep(2000);
+    Utilities.sleep(3000);
   }
 }

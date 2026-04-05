@@ -1,7 +1,46 @@
 "use client";
 
+import { useMemo, useCallback, useSyncExternalStore } from "react";
 import { PhotoEntry } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
+
+function useColCount() {
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener("resize", cb);
+    return () => window.removeEventListener("resize", cb);
+  }, []);
+  return useSyncExternalStore(
+    subscribe,
+    () => (window.innerWidth >= 640 ? 3 : 2),
+    () => 2
+  );
+}
+
+function distributeToColumns<T extends { aspect_ratio: number }>(
+  items: T[],
+  colCount: number
+): { item: T; globalIndex: number }[][] {
+  const cols: { item: T; globalIndex: number }[][] = Array.from(
+    { length: colCount },
+    () => []
+  );
+  const heights = new Array(colCount).fill(0);
+
+  for (let i = 0; i < items.length; i++) {
+    let minIdx = colCount - 1;
+    let minH = heights[colCount - 1];
+    for (let c = colCount - 2; c >= 0; c--) {
+      if (heights[c] < minH) {
+        minH = heights[c];
+        minIdx = c;
+      }
+    }
+    cols[minIdx].push({ item: items[i], globalIndex: i });
+    heights[minIdx] += 1 / (items[i].aspect_ratio || 1.25);
+  }
+
+  return cols;
+}
 
 interface MyVotesProps {
   entries: PhotoEntry[];
@@ -10,6 +49,7 @@ interface MyVotesProps {
 }
 
 export function MyVotes({ entries, votedIds, onPhotoClick }: MyVotesProps) {
+  const colCount = useColCount();
   const votedEntries = entries.filter((e) => votedIds.has(e.id));
 
   if (votedEntries.length === 0) {
@@ -55,40 +95,63 @@ export function MyVotes({ entries, votedIds, onPhotoClick }: MyVotesProps) {
         </div>
       </div>
 
-      <div className="columns-2 sm:columns-3 gap-3">
-        {votedEntries.map((entry, i) => (
-          <button
-            key={entry.id}
-            onClick={() => onPhotoClick(entry)}
-            className="w-full mb-3 break-inside-avoid group cursor-pointer bg-transparent border-none p-0 text-left animate-card-rise"
-            style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
-          >
-            <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">
-              <img
-                src={entry.thumb_url || entry.image_url}
-                alt={entry.nickname}
-                className="w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]"
-                loading="lazy"
-              />
-              <div className="absolute top-2.5 left-2.5">
-                <SchoolBadge school={entry.school} />
-              </div>
-              <div className="absolute top-2.5 right-2.5">
-                <div className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#ff2d55">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
+      <MyVotesMasonry entries={votedEntries} colCount={colCount} onPhotoClick={onPhotoClick} />
+    </div>
+  );
+}
+
+function MyVotesMasonry({
+  entries,
+  colCount,
+  onPhotoClick,
+}: {
+  entries: PhotoEntry[];
+  colCount: number;
+  onPhotoClick: (entry: PhotoEntry) => void;
+}) {
+  const columns = useMemo(
+    () => distributeToColumns(entries, colCount),
+    [entries, colCount]
+  );
+
+  return (
+    <div className="flex gap-3">
+      {columns.map((col, c) => (
+        <div key={c} className="flex-1 min-w-0">
+          {col.map(({ item: entry, globalIndex: i }) => (
+            <button
+              key={entry.id}
+              onClick={() => onPhotoClick(entry)}
+              className="w-full mb-3 group cursor-pointer bg-transparent border-none p-0 text-left animate-card-rise"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
+            >
+              <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">
+                <img
+                  src={entry.thumb_url || entry.image_url}
+                  alt={entry.nickname}
+                  className="w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                  loading="lazy"
+                />
+                <div className="absolute top-2.5 left-2.5">
+                  <SchoolBadge school={entry.school} />
                 </div>
+                <div className="absolute top-2.5 right-2.5">
+                  <div className="w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#ff2d55">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
-              <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-            <div className="px-1 pt-2 pb-1">
-              <p className="text-sm font-medium truncate">{entry.nickname}</p>
-              <p className="text-xs text-muted">{entry.votes}표</p>
-            </div>
-          </button>
-        ))}
-      </div>
+              <div className="px-1 pt-2 pb-1">
+                <p className="text-sm font-medium truncate">{entry.nickname}</p>
+                <p className="text-xs text-muted">{entry.votes}표</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { useAuth } from "./auth-provider";
@@ -15,8 +15,73 @@ import { LoginPrompt } from "./login-prompt";
 
 type Filter = "all" | School;
 
+function useColCount() {
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener("resize", cb);
+    return () => window.removeEventListener("resize", cb);
+  }, []);
+  return useSyncExternalStore(
+    subscribe,
+    () => (window.innerWidth >= 640 ? 3 : 2),
+    () => 2
+  );
+}
+
+function distributeToColumns<T extends { aspect_ratio: number }>(
+  items: T[],
+  colCount: number
+): { item: T; globalIndex: number }[][] {
+  const cols: { item: T; globalIndex: number }[][] = Array.from(
+    { length: colCount },
+    () => []
+  );
+  const heights = new Array(colCount).fill(0);
+
+  for (let i = 0; i < items.length; i++) {
+    // Find shortest column, prefer rightmost on tie
+    let minIdx = colCount - 1;
+    let minH = heights[colCount - 1];
+    for (let c = colCount - 2; c >= 0; c--) {
+      if (heights[c] < minH) {
+        minH = heights[c];
+        minIdx = c;
+      }
+    }
+    cols[minIdx].push({ item: items[i], globalIndex: i });
+    heights[minIdx] += 1 / (items[i].aspect_ratio || 1.25);
+  }
+
+  return cols;
+}
+
+function MasonryGrid({
+  items,
+  colCount,
+  renderItem,
+}: {
+  items: PhotoEntry[];
+  colCount: number;
+  renderItem: (item: PhotoEntry, globalIndex: number) => React.ReactNode;
+}) {
+  const columns = useMemo(
+    () => distributeToColumns(items, colCount),
+    [items, colCount]
+  );
+
+  return (
+    <div className="flex gap-3">
+      {columns.map((col, c) => (
+        <div key={c} className="flex-1 min-w-0">
+          {col.map(({ item, globalIndex }) => renderItem(item, globalIndex))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function MasonryGallery() {
   const { user } = useAuth();
+  const colCount = useColCount();
   const [entries, setEntries] = useState<PhotoEntry[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -28,6 +93,7 @@ export function MasonryGallery() {
   const [activeTab, setActiveTab] = useState<Tab>("feed");
   const [showLogin, setShowLogin] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const handleVote = useCallback(async (id: string) => {
@@ -80,7 +146,7 @@ export function MasonryGallery() {
     if (loading || !hasMore) return;
     setLoading(true);
 
-    const newEntries = await fetchPhotos(page, 20);
+    const newEntries = await fetchPhotos(page, 100);
     if (newEntries.length === 0) {
       setHasMore(false);
     } else {
@@ -136,7 +202,14 @@ export function MasonryGallery() {
   }, [entries]);
 
   const sorted = useMemo(() => {
-    const base = filter === "all" ? uniqueEntries : uniqueEntries.filter((e) => e.school === filter);
+    let base = filter === "all" ? uniqueEntries : uniqueEntries.filter((e) => e.school === filter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      base = base.filter((e) =>
+        e.nickname.toLowerCase().includes(q) ||
+        (e.club && e.club.toLowerCase().includes(q))
+      );
+    }
     switch (sortBy) {
       case "popular":
         return [...base].sort((a, b) => b.votes - a.votes);
@@ -152,7 +225,7 @@ export function MasonryGallery() {
         });
       }
     }
-  }, [uniqueEntries, filter, sortBy]);
+  }, [uniqueEntries, filter, sortBy, searchQuery]);
 
   return (
     <>
@@ -248,8 +321,33 @@ export function MasonryGallery() {
               </div>
             </div>
 
-            {/* Sort dropdown */}
-            <div className="flex justify-end mb-3 px-1 relative">
+            {/* Search + Sort row */}
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <div className="flex-1 relative">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="닉네임, 동아리 검색"
+                  className="w-full bg-surface text-xs text-foreground pl-8 pr-3 py-2 rounded-lg border border-border/50 outline-none placeholder:text-muted/50 focus:border-white/20 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-foreground cursor-pointer"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M4 4L12 12M12 4L4 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
                 className="flex items-center gap-1.5 bg-surface text-xs text-muted font-medium px-3 py-1.5 rounded-lg cursor-pointer border border-border/50 hover:text-foreground transition-colors"
@@ -276,19 +374,22 @@ export function MasonryGallery() {
                   </div>
                 </>
               )}
+              </div>
             </div>
 
-            <div className="columns-2 sm:columns-3 gap-3">
-              {sorted.map((entry, i) => (
+            <MasonryGrid
+              items={sorted}
+              colCount={colCount}
+              renderItem={(entry, index) => (
                 <PhotoCard
                   key={entry.id}
                   entry={entry}
-                  index={i}
+                  index={index}
                   voted={votedIds.has(entry.id)}
                   onClick={setSelectedEntry}
                 />
-              ))}
-            </div>
+              )}
+            />
             <div ref={loaderRef} className="flex justify-center py-8">
               {loading && (
                 <div className="w-6 h-6 border-2 border-border border-t-foreground rounded-full animate-spin" />
