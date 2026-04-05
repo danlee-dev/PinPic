@@ -37,7 +37,7 @@ export function PhotoModal({ entry, voted, onVote, onClose }: PhotoModalProps) {
     setTimeout(() => {
       setVisible(false);
       onClose();
-    }, 300);
+    }, 200);
   }, [onClose]);
 
   const handleKeyDown = useCallback(

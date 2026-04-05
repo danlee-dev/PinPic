@@ -41,7 +41,7 @@ export function PhotoCard({ entry, index, voted, onVote, onClick }: PhotoCardPro
     (e: React.MouseEvent) => {
       const now = Date.now();
 
-      if (now - lastTapRef.current < 300) {
+      if (now - lastTapRef.current < 250) {
         if (singleTapTimer.current) {
           clearTimeout(singleTapTimer.current);
           singleTapTimer.current = null;
@@ -57,7 +57,7 @@ export function PhotoCard({ entry, index, voted, onVote, onClick }: PhotoCardPro
         singleTapTimer.current = setTimeout(() => {
           onClick(entry);
           singleTapTimer.current = null;
-        }, 300);
+        }, 200);
       }
     },
     [voted, onVote, onClick, entry]

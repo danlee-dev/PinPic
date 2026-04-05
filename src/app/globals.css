@@ -173,15 +173,11 @@ body {
 @keyframes modal-expand-in {
   0% {
     opacity: 0;
-    transform: scale(0.6);
-    filter: blur(8px);
+    transform: scale(0.85);
   }
-  50% {
+  60% {
     opacity: 1;
-    filter: blur(0);
-  }
-  70% {
-    transform: scale(1.02);
+    transform: scale(1.01);
   }
   100% {
     opacity: 1;
@@ -190,16 +186,8 @@ body {
   }
 }
 @keyframes modal-shrink-out {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-    filter: blur(0);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.7);
-    filter: blur(6px);
-  }
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
 }
 @keyframes modal-overlay-in {
   0% { opacity: 0; backdrop-filter: blur(0); }
@@ -209,7 +197,7 @@ body {
   0% { opacity: 1; backdrop-filter: blur(20px); }
   100% { opacity: 0; backdrop-filter: blur(0); }
 }
-.animate-modal-in { animation: modal-expand-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.animate-modal-out { animation: modal-shrink-out 0.3s cubic-bezier(0.4, 0, 1, 1) both; }
-.animate-modal-overlay-in { animation: modal-overlay-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.animate-modal-overlay-out { animation: modal-overlay-out 0.3s cubic-bezier(0.4, 0, 1, 1) both; }
+.animate-modal-in { animation: modal-expand-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-modal-out { animation: modal-shrink-out 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+.animate-modal-overlay-in { animation: modal-overlay-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-modal-overlay-out { animation: modal-overlay-out 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
