@@ -22,6 +22,7 @@ export function MasonryGallery() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
+  const [sortBy, setSortBy] = useState<"random" | "popular" | "latest">("random");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<Tab>("feed");
@@ -120,22 +121,27 @@ export function MasonryGallery() {
     return () => observer.disconnect();
   }, [loadMore, activeTab]);
 
-  // Shuffle entries once on initial load (stable during session)
-  const [shuffledEntries, setShuffledEntries] = useState<PhotoEntry[]>([]);
+  // Shuffle order (stable per session)
+  const [shuffleOrder, setShuffleOrder] = useState<string[]>([]);
   useEffect(() => {
-    if (entries.length > 0 && shuffledEntries.length === 0) {
-      const shuffled = [...entries].sort(() => Math.random() - 0.5);
-      setShuffledEntries(shuffled);
-    } else if (entries.length > shuffledEntries.length) {
-      // Append new entries (from infinite scroll) without re-shuffling existing
-      const newOnes = entries.slice(shuffledEntries.length);
-      setShuffledEntries((prev) => [...prev, ...newOnes.sort(() => Math.random() - 0.5)]);
+    if (entries.length > shuffleOrder.length) {
+      const newIds = entries.slice(shuffleOrder.length).map((e) => e.id);
+      setShuffleOrder((prev) => [...prev, ...newIds].sort(() => Math.random() - 0.5));
     }
   }, [entries]);
 
-  const filtered = filter === "all"
-    ? shuffledEntries
-    : shuffledEntries.filter((e) => e.school === filter);
+  const sorted = (() => {
+    const base = filter === "all" ? entries : entries.filter((e) => e.school === filter);
+    switch (sortBy) {
+      case "popular":
+        return [...base].sort((a, b) => b.votes - a.votes);
+      case "latest":
+        return base;
+      case "random":
+      default:
+        return [...base].sort((a, b) => shuffleOrder.indexOf(a.id) - shuffleOrder.indexOf(b.id));
+    }
+  })();
 
   return (
     <>
@@ -229,6 +235,23 @@ export function MasonryGallery() {
                 ))}
               </nav>
 
+              {/* Sort dropdown */}
+              <div className="relative mt-3 inline-flex">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
+                  className="appearance-none bg-white/5 text-xs text-muted font-medium pl-3 pr-7 py-1.5 rounded-full cursor-pointer outline-none transition-colors hover:text-foreground"
+                  style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                >
+                  <option value="random">랜덤</option>
+                  <option value="popular">인기순</option>
+                  <option value="latest">최신순</option>
+                </select>
+                <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+
               {/* Share button */}
               <button
                 onClick={() => {
@@ -257,7 +280,7 @@ export function MasonryGallery() {
               </button>
             </div>
             <div className="columns-2 sm:columns-3 gap-3">
-              {filtered.map((entry, i) => (
+              {sorted.map((entry, i) => (
                 <PhotoCard
                   key={entry.id}
                   entry={entry}
