@@ -136,51 +136,20 @@ export interface EngagementStats {
 export async function fetchEngagementStats(): Promise<EngagementStats> {
   const supabase = getSupabase();
 
-  // Get admin user IDs to exclude
-  const { data: adminData } = await supabase.from("admins").select("user_id");
-  const adminIds = new Set((adminData || []).map((a: any) => a.user_id));
-
-  // Fetch views and clicks
-  const [{ data: views }, { data: clicks }] = await Promise.all([
-    supabase.from("photo_views").select("photo_id, user_id, photos(nickname, school)"),
-    supabase.from("photo_clicks").select("photo_id, user_id, photos(nickname, school)"),
+  // Fetch from DB views (aggregated server-side)
+  const [{ data: totals }, { data: byPhoto }, { data: byUserRaw }] = await Promise.all([
+    supabase.from("engagement_totals").select("*").single(),
+    supabase.from("engagement_by_photo").select("*"),
+    supabase.rpc("engagement_by_user"),
   ]);
 
-  const safeViews = ((views || []) as any[]).filter(v => !v.user_id || !adminIds.has(v.user_id));
-  const safeClicks = ((clicks || []) as any[]).filter(c => !c.user_id || !adminIds.has(c.user_id));
+  const t = totals || { total_views: 0, total_clicks: 0, logged_in_views: 0, anon_views: 0, logged_in_clicks: 0, anon_clicks: 0 };
+  const totalViews = t.total_views || 0;
+  const totalClicks = t.total_clicks || 0;
 
-  // Total
-  const totalViews = safeViews.length;
-  const totalClicks = safeClicks.length;
-
-  // By photo
-  const photoMap: Record<string, { nickname: string; school: string; views: number; clicks: number }> = {};
-  for (const v of safeViews) {
-    const pid = v.photo_id;
-    if (!photoMap[pid]) photoMap[pid] = { nickname: v.photos?.nickname || "?", school: v.photos?.school || "?", views: 0, clicks: 0 };
-    photoMap[pid].views++;
-  }
-  for (const c of safeClicks) {
-    const pid = c.photo_id;
-    if (!photoMap[pid]) photoMap[pid] = { nickname: c.photos?.nickname || "?", school: c.photos?.school || "?", views: 0, clicks: 0 };
-    photoMap[pid].clicks++;
-  }
-
-  // By user (only logged-in users)
-  const userMap: Record<string, { views: number; clicks: number }> = {};
-  for (const v of safeViews) {
-    if (!v.user_id) continue;
-    if (!userMap[v.user_id]) userMap[v.user_id] = { views: 0, clicks: 0 };
-    userMap[v.user_id].views++;
-  }
-  for (const c of safeClicks) {
-    if (!c.user_id) continue;
-    if (!userMap[c.user_id]) userMap[c.user_id] = { views: 0, clicks: 0 };
-    userMap[c.user_id].clicks++;
-  }
-
-  // Resolve user emails via server API
-  const userIds = Object.keys(userMap);
+  // Resolve user emails
+  const userRows = (byUserRaw || []) as { user_id: string; views: number; clicks: number }[];
+  const userIds = userRows.map(u => u.user_id);
   let emailMap: Record<string, string> = {};
   if (userIds.length > 0) {
     try {
@@ -191,24 +160,18 @@ export async function fetchEngagementStats(): Promise<EngagementStats> {
       });
       if (res.ok) emailMap = await res.json();
     } catch {}
-    // Fallback for any missing
     for (const id of userIds) {
       if (!emailMap[id]) emailMap[id] = id.slice(0, 8) + "...";
     }
   }
 
-  const loggedInViews = safeViews.filter(v => v.user_id).length;
-  const anonViews = totalViews - loggedInViews;
-  const loggedInClicks = safeClicks.filter(c => c.user_id).length;
-  const anonClicks = totalClicks - loggedInClicks;
-
   return {
-    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0, loggedInViews, anonViews, loggedInClicks, anonClicks },
-    byPhoto: Object.entries(photoMap)
-      .map(([photo_id, v]) => ({ photo_id, ...v, rate: v.views > 0 ? Math.round((v.clicks / v.views) * 100) : 0 }))
+    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0, loggedInViews: t.logged_in_views || 0, anonViews: t.anon_views || 0, loggedInClicks: t.logged_in_clicks || 0, anonClicks: t.anon_clicks || 0 },
+    byPhoto: ((byPhoto || []) as any[])
+      .map(p => ({ photo_id: p.photo_id, nickname: p.nickname, school: p.school, views: p.views || 0, clicks: p.clicks || 0, rate: p.views > 0 ? Math.round((p.clicks / p.views) * 100) : 0 }))
       .sort((a, b) => b.views - a.views),
-    byUser: Object.entries(userMap)
-      .map(([user_id, v]) => ({ user_id, email: emailMap[user_id] || user_id, ...v, rate: v.views > 0 ? Math.round((v.clicks / v.views) * 100) : 0 }))
+    byUser: userRows
+      .map(u => ({ user_id: u.user_id, email: emailMap[u.user_id] || u.user_id.slice(0, 8) + "...", views: u.views, clicks: u.clicks, rate: u.views > 0 ? Math.round((u.clicks / u.views) * 100) : 0 }))
       .sort((a, b) => b.views - a.views),
   };
 }
