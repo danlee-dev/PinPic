@@ -342,6 +342,17 @@ export function MasonryGallery() {
               </div>
             </div>
 
+            {/* Voting period notice */}
+            {votingStatus !== "during" && !isAdmin && (
+              <div className="mb-3 px-1">
+                <div className="text-center text-xs text-muted py-2 px-4 rounded-xl bg-surface border border-border/30">
+                  {votingStatus === "before"
+                    ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
+                    : "투표가 종료되었습니다"}
+                </div>
+              </div>
+            )}
+
             {/* Search + Sort row */}
             <div className="flex items-center gap-2 mb-3 px-1">
               <div className="flex-1 relative">
@@ -457,16 +468,6 @@ export function MasonryGallery() {
         {activeTab === "admin" && isAdmin && <AdminPanel />}
       </div>
 
-      {/* Voting period banner */}
-      {votingStatus !== "during" && !isAdmin && (
-        <div className="fixed top-12 left-0 right-0 z-20 flex justify-center pointer-events-none">
-          <div className="pointer-events-auto bg-surface/95 backdrop-blur-xl text-xs text-muted px-4 py-2 rounded-full border border-border/50 shadow-lg">
-            {votingStatus === "before"
-              ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
-              : "투표가 종료되었습니다"}
-          </div>
-        </div>
-      )}
 
       <BottomDock
         activeTab={activeTab}
