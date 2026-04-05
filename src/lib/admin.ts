@@ -6,17 +6,21 @@ function getSupabase() {
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
-  const supabase = getSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
+  try {
+    const supabase = getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
 
-  const { data } = await supabase
-    .from("admins")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
+    const { data } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
 
-  return !!data;
+    return !!data;
+  } catch {
+    return false;
+  }
 }
 
 export async function fetchVotingPeriod(): Promise<VotingPeriod | null> {

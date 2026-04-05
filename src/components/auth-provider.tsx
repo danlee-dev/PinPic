@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    Promise.all([getUser(), checkIsAdmin()]).then(([u, admin]) => {
+    Promise.all([getUser(), checkIsAdmin().catch(() => false)]).then(([u, admin]) => {
       setUser(u);
       const adminStatus = u ? admin : false;
       setIsAdmin(adminStatus);
@@ -46,9 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const subscription = onAuthStateChange(async (u) => {
       setUser(u);
       if (u) {
-        const admin = await checkIsAdmin();
-        setIsAdmin(admin);
-        setCachedAdmin(admin);
+        try {
+          const admin = await checkIsAdmin();
+          setIsAdmin(admin);
+          setCachedAdmin(admin);
+        } catch {
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(false);
         setCachedAdmin(false);
