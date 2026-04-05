@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
-import { createClient } from "@/utils/supabase/client";
+import { createClient as createRealtimeClient } from "@supabase/supabase-js";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -253,9 +253,12 @@ export function MasonryGallery() {
     }
   }, [user]);
 
-  // Realtime: subscribe to votes table changes
+  // Realtime: subscribe to votes table changes (requires anon key for WebSocket)
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = createRealtimeClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     const channel = supabase
       .channel("votes-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
