@@ -299,6 +299,7 @@ export function MasonryGallery() {
                           : yVotes === 0 ? `linear-gradient(to right, #e8193e 0%, #e8193e 70%, #2a2a2a 95%)`
                           : `linear-gradient(to right, #e8193e 0%, #e8193e ${kPct - 12}%, #6a1a3a ${kPct}%, #3a2a6a ${kPct}%, #1a6dff ${kPct + 12}%, #1a6dff 100%)`,
                         boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)",
+                        transition: "background 0.8s ease-out",
                       }}
                     >
                       <div className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)" }} />
