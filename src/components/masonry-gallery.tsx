@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
-import { createClient as createRealtimeClient } from "@supabase/supabase-js";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -253,29 +252,14 @@ export function MasonryGallery() {
     }
   }, [user]);
 
-  // Realtime: subscribe to votes table changes
+  // Poll for vote updates every 30 seconds
   useEffect(() => {
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!anonKey || !url) return;
-
-    try {
-      const supabase = createRealtimeClient(url, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    const interval = setInterval(() => {
+      fetchPhotos(0, 100).then((fresh) => {
+        if (fresh.length > 0) setEntries(fresh);
       });
-      const channel = supabase
-        .channel("votes-realtime")
-        .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
-          fetchPhotos(0, 100).then((fresh) => {
-            setEntries(fresh);
-          });
-        })
-        .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
-    } catch {
-      // Realtime connection failed silently
-    }
+    }, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

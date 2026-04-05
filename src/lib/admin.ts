@@ -15,7 +15,7 @@ export async function checkIsAdmin(): Promise<boolean> {
       .from("admins")
       .select("id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     return !!data;
   } catch {
