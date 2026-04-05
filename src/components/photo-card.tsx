@@ -83,16 +83,11 @@ export function PhotoCard({ entry, index, voted, onClick }: PhotoCardProps) {
             ) : (
               <span />
             )}
-            <div className="flex items-center gap-1">
-              {voted && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#ff2d55">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-              )}
-              <p className="text-[11px] font-medium text-white/80">
-                {entry.votes}
-              </p>
-            </div>
+            {voted && (
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#ff2d55">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            )}
           </div>
         </div>
       </div>
