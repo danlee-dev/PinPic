@@ -72,7 +72,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
     const text = `${entry.nickname}님의 사진에 투표하세요! ${entry.school === "yonsei" ? "연세대" : "고려대"} 화력 지원!`;
 
     if (navigator.share) {
-      navigator.share({ title: "PinPic - 연고전 사진 대결", text, url });
+      navigator.share({ title: "PinPic - 연고전 사진 대결", text, url }).catch(() => {});
     } else {
       navigator.clipboard.writeText(`${text}\n${url}`);
       alert("링크가 복사되었습니다!");

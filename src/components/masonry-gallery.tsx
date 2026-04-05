@@ -209,7 +209,7 @@ export function MasonryGallery() {
                   const url = typeof window !== "undefined" ? window.location.href : "";
                   const text = "연고전 사진 대결! 우리 학교 화력 지원하러 가자";
                   if (navigator.share) {
-                    navigator.share({ title: "PinPic - 연고전 사진 대결", text, url });
+                    navigator.share({ title: "PinPic - 연고전 사진 대결", text, url }).catch(() => {});
                   } else {
                     navigator.clipboard.writeText(`${text}\n${url}`);
                     alert("링크가 복사되었습니다!");
