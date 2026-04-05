@@ -224,27 +224,27 @@ export function AdminPanel() {
       {tab === "settings" && (
         <div className="space-y-6">
           {/* Voting period */}
-          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+          <div className="bg-surface rounded-2xl p-4 border border-border/30 overflow-hidden">
             <h3 className="text-sm font-semibold mb-3">투표 기간 (KST)</h3>
             <div className="space-y-2">
-              <div>
+              <div className="overflow-hidden">
                 <label className="text-xs text-muted block mb-1">시작</label>
                 <input
                   type="datetime-local"
                   value={editStart}
                   onChange={(e) => setEditStart(e.target.value)}
-                  className="w-full max-w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none box-border"
-                  style={{ colorScheme: "dark" }}
+                  className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none"
+                  style={{ colorScheme: "dark", maxWidth: "100%", boxSizing: "border-box", WebkitAppearance: "none" }}
                 />
               </div>
-              <div>
+              <div className="overflow-hidden">
                 <label className="text-xs text-muted block mb-1">종료</label>
                 <input
                   type="datetime-local"
                   value={editEnd}
                   onChange={(e) => setEditEnd(e.target.value)}
-                  className="w-full max-w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none box-border"
-                  style={{ colorScheme: "dark" }}
+                  className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none"
+                  style={{ colorScheme: "dark", maxWidth: "100%", boxSizing: "border-box", WebkitAppearance: "none" }}
                 />
               </div>
               <button
