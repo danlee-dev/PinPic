@@ -18,6 +18,12 @@ import { SchoolBadge } from "./school-badge";
 
 type AdminTab = "pending" | "photos" | "settings";
 
+interface ConfirmAction {
+  type: "reject" | "delete";
+  photoId: string;
+  photoName: string;
+}
+
 export function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>("pending");
   const [pending, setPending] = useState<PhotoWithVotesRow[]>([]);
@@ -29,6 +35,7 @@ export function AdminPanel() {
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
   const [message, setMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -59,21 +66,32 @@ export function AdminPanel() {
   const handleApprove = async (id: string) => {
     await approvePhoto(id);
     setPending((prev) => prev.filter((p) => p.id !== id));
+    setAllPhotos((prev) => prev.map((p) => p.id === id ? { ...p, status: "approved" as const } : p));
     showMessage("승인 완료");
   };
 
   const handleReject = async (id: string) => {
     await rejectPhoto(id);
     setPending((prev) => prev.filter((p) => p.id !== id));
-    showMessage("거절 완료");
+    setAllPhotos((prev) => prev.map((p) => p.id === id ? { ...p, status: "rejected" as const } : p));
+    showMessage("거절 완료 (사진 관리에서 복원 가능)");
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
     await deletePhoto(id);
     setAllPhotos((prev) => prev.filter((p) => p.id !== id));
     setPending((prev) => prev.filter((p) => p.id !== id));
     showMessage("삭제 완료");
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+    if (confirmAction.type === "reject") {
+      await handleReject(confirmAction.photoId);
+    } else {
+      await handleDelete(confirmAction.photoId);
+    }
+    setConfirmAction(null);
   };
 
   const handleSavePeriod = async () => {
@@ -121,6 +139,38 @@ export function AdminPanel() {
         </div>
       )}
 
+      {/* Confirm modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setConfirmAction(null)}>
+          <div className="bg-card rounded-3xl p-6 max-w-sm w-full text-center border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-2">
+              {confirmAction.type === "delete" ? "사진을 삭제하시겠습니까?" : "사진을 거절하시겠습니까?"}
+            </h3>
+            <p className="text-sm text-muted mb-1">{confirmAction.photoName}</p>
+            <p className="text-xs text-muted mb-5">
+              {confirmAction.type === "delete"
+                ? "삭제하면 복원할 수 없습니다."
+                : "거절된 사진은 사진 관리에서 다시 승인할 수 있습니다."}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmAction(null)}
+                className="flex-1 py-2.5 bg-surface text-foreground text-sm font-semibold rounded-xl cursor-pointer border border-border/50 active:scale-[0.97] transition-all"
+              >
+                취소
+              </button>
+              <button
+                onClick={executeConfirmAction}
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-xl cursor-pointer active:scale-[0.97] transition-all
+                  ${confirmAction.type === "delete" ? "bg-red-500 text-white" : "bg-yellow-500 text-black"}`}
+              >
+                {confirmAction.type === "delete" ? "삭제" : "거절"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin sub-tabs */}
       <div className="flex gap-1 mb-4 bg-surface rounded-xl p-1">
         {([
@@ -149,8 +199,8 @@ export function AdminPanel() {
                 key={photo.id}
                 photo={photo}
                 onApprove={() => handleApprove(photo.id)}
-                onReject={() => handleReject(photo.id)}
-                onDelete={() => handleDelete(photo.id)}
+                onReject={() => setConfirmAction({ type: "reject", photoId: photo.id, photoName: photo.nickname })}
+                onDelete={() => setConfirmAction({ type: "delete", photoId: photo.id, photoName: photo.nickname })}
               />
             ))
           )}
@@ -164,8 +214,8 @@ export function AdminPanel() {
               key={photo.id}
               photo={photo}
               onApprove={photo.status !== "approved" ? () => handleApprove(photo.id) : undefined}
-              onReject={photo.status !== "rejected" ? () => handleReject(photo.id) : undefined}
-              onDelete={() => handleDelete(photo.id)}
+              onReject={photo.status !== "rejected" ? () => setConfirmAction({ type: "reject", photoId: photo.id, photoName: photo.nickname }) : undefined}
+              onDelete={() => setConfirmAction({ type: "delete", photoId: photo.id, photoName: photo.nickname })}
             />
           ))}
         </div>
@@ -183,7 +233,8 @@ export function AdminPanel() {
                   type="datetime-local"
                   value={editStart}
                   onChange={(e) => setEditStart(e.target.value)}
-                  className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none"
+                  className="w-full max-w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none box-border"
+                  style={{ colorScheme: "dark" }}
                 />
               </div>
               <div>
@@ -192,7 +243,8 @@ export function AdminPanel() {
                   type="datetime-local"
                   value={editEnd}
                   onChange={(e) => setEditEnd(e.target.value)}
-                  className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none"
+                  className="w-full max-w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none box-border"
+                  style={{ colorScheme: "dark" }}
                 />
               </div>
               <button
@@ -205,16 +257,16 @@ export function AdminPanel() {
           </div>
 
           {/* Admin management */}
-          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+          <div className="bg-surface rounded-2xl p-4 border border-border/30 overflow-hidden">
             <h3 className="text-sm font-semibold mb-3">관리자 계정</h3>
             <div className="space-y-2 mb-3">
               {admins.map((admin) => (
                 <div key={admin.id} className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-lg">
-                  <span className="text-sm">{admin.email}</span>
+                  <span className="text-sm truncate">{admin.email}</span>
                   {admins.length > 1 && (
                     <button
                       onClick={() => handleRemoveAdmin(admin.user_id, admin.email)}
-                      className="text-xs text-muted hover:text-korea cursor-pointer"
+                      className="text-xs text-muted hover:text-korea cursor-pointer flex-shrink-0 ml-2"
                     >
                       제거
                     </button>
@@ -227,12 +279,12 @@ export function AdminPanel() {
                 type="email"
                 value={newAdminEmail}
                 onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="추가할 관리자 이메일"
-                className="flex-1 bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none placeholder:text-muted/50"
+                placeholder="관리자 이메일"
+                className="flex-1 min-w-0 bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none placeholder:text-muted/50"
               />
               <button
                 onClick={handleAddAdmin}
-                className="px-4 py-2 bg-white text-black text-sm font-semibold rounded-lg cursor-pointer hover:bg-white/90 active:scale-[0.98] transition-all"
+                className="px-4 py-2 bg-white text-black text-sm font-semibold rounded-lg cursor-pointer hover:bg-white/90 active:scale-[0.98] transition-all flex-shrink-0"
               >
                 추가
               </button>
@@ -277,7 +329,7 @@ function PhotoAdminCard({
         <div className="flex items-center gap-2 mb-1">
           <SchoolBadge school={photo.school} />
           <span className="text-sm font-semibold truncate">{photo.nickname}</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${statusColor}`}>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${statusColor}`}>
             {statusLabel}
           </span>
         </div>
