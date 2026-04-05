@@ -213,7 +213,7 @@ export function MasonryGallery() {
               <button
                 onClick={() => {
                   const url = typeof window !== "undefined" ? window.location.href : "";
-                  const text = "연고전 사진 대결! 우리 학교 화력 지원하러 가자";
+                  const text = "제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!";
                   if (navigator.share) {
                     navigator.share({ title: "PinPic - 연고전 사진 대결", text, url }).catch(() => {});
                   } else {
