@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
+import { createClient } from "@/utils/supabase/client";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -186,6 +187,21 @@ export function MasonryGallery() {
       setVotedIds(new Set());
     }
   }, [user]);
+
+  // Realtime: subscribe to votes table changes
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("votes-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
+        fetchPhotos(0, 100).then((fresh) => {
+          setEntries(fresh);
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   useEffect(() => {
     const loader = loaderRef.current;
