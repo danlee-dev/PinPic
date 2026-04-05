@@ -46,16 +46,22 @@ const tabs: { value: Tab; label: string; icon: (active: boolean) => React.ReactN
 ];
 
 export function BottomDock({ activeTab, onTabChange, votedCount }: BottomDockProps) {
-  const seenCountRef = useRef(0);
+  const seenCountRef = useRef<number | null>(null);
 
-  // When user visits voted tab, mark current count as seen
+  // Set baseline on initial load, then update when visiting voted tab
+  useEffect(() => {
+    if (seenCountRef.current === null && votedCount > 0) {
+      seenCountRef.current = votedCount;
+    }
+  }, [votedCount]);
+
   useEffect(() => {
     if (activeTab === "voted") {
       seenCountRef.current = votedCount;
     }
   }, [activeTab, votedCount]);
 
-  const unseenCount = votedCount - seenCountRef.current;
+  const unseenCount = seenCountRef.current === null ? 0 : votedCount - seenCountRef.current;
 
   return (
     <div className="fixed bottom-5 inset-x-0 z-40 flex justify-center animate-dock-rise pointer-events-none">
