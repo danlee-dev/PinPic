@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
+import { createClient } from "@/utils/supabase/client";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
@@ -252,14 +253,19 @@ export function MasonryGallery() {
     }
   }, [user]);
 
-  // Poll for vote updates every 15 seconds
+  // Realtime vote updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchPhotos(0, 100).then((fresh) => {
-        if (fresh.length > 0) setEntries(fresh);
-      });
-    }, 15000);
-    return () => clearInterval(interval);
+    const supabase = createClient();
+    const channel = supabase
+      .channel("votes-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
+        fetchPhotos(0, 100).then((fresh) => {
+          if (fresh.length > 0) setEntries(fresh);
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   useEffect(() => {
