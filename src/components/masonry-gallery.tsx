@@ -511,7 +511,7 @@ export function MasonryGallery() {
       {/* Fixed voting period banner */}
       {votingStatus !== "during" && !isAdmin && (
         <div className="fixed top-40 left-0 right-0 z-30 flex justify-center pointer-events-none">
-          <div className="bg-black/70 backdrop-blur-sm text-white text-sm font-semibold px-6 py-3.5 rounded-2xl border border-white/20 shadow-lg pointer-events-auto">
+          <div className="bg-black/70 backdrop-blur-sm text-white text-sm font-semibold px-6 py-3.5 rounded-full border border-white/20 shadow-lg pointer-events-auto">
             {votingStatus === "before"
               ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
               : "투표가 종료되었습니다"}
