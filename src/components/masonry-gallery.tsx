@@ -411,7 +411,7 @@ export function MasonryGallery() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="닉네임, 동아리 검색"
+                  placeholder="닉네임 또는 동아리로 사진 찾기"
                   className="w-full text-xs text-foreground pl-8 pr-3 h-9 rounded-xl outline-none placeholder:text-muted/50 focus:border-white/20 transition-colors bg-surface border border-white/8"
                   style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
                 />
