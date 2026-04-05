@@ -253,22 +253,27 @@ export function MasonryGallery() {
     }
   }, [user]);
 
-  // Realtime: subscribe to votes table changes (requires anon key for WebSocket)
+  // Realtime: subscribe to votes table changes
   useEffect(() => {
-    const supabase = createRealtimeClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const channel = supabase
-      .channel("votes-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
-        fetchPhotos(0, 100).then((fresh) => {
-          setEntries(fresh);
-        });
-      })
-      .subscribe();
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!anonKey || !url) return;
 
-    return () => { supabase.removeChannel(channel); };
+    try {
+      const supabase = createRealtimeClient(url, anonKey);
+      const channel = supabase
+        .channel("votes-realtime")
+        .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
+          fetchPhotos(0, 100).then((fresh) => {
+            setEntries(fresh);
+          });
+        })
+        .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+    } catch {
+      // Realtime connection failed silently
+    }
   }, []);
 
   useEffect(() => {
