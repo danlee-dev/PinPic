@@ -128,7 +128,7 @@ export async function removeAdmin(userId: string): Promise<boolean> {
 }
 
 export interface EngagementStats {
-  total: { views: number; clicks: number; rate: number };
+  total: { views: number; clicks: number; rate: number; loggedInViews: number; anonViews: number; loggedInClicks: number; anonClicks: number };
   byPhoto: { photo_id: string; nickname: string; school: string; views: number; clicks: number; rate: number }[];
   byUser: { user_id: string; email: string; views: number; clicks: number; rate: number }[];
 }
@@ -197,8 +197,13 @@ export async function fetchEngagementStats(): Promise<EngagementStats> {
     }
   }
 
+  const loggedInViews = safeViews.filter(v => v.user_id).length;
+  const anonViews = totalViews - loggedInViews;
+  const loggedInClicks = safeClicks.filter(c => c.user_id).length;
+  const anonClicks = totalClicks - loggedInClicks;
+
   return {
-    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0 },
+    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0, loggedInViews, anonViews, loggedInClicks, anonClicks },
     byPhoto: Object.entries(photoMap)
       .map(([photo_id, v]) => ({ photo_id, ...v, rate: v.views > 0 ? Math.round((v.clicks / v.views) * 100) : 0 }))
       .sort((a, b) => b.views - a.views),

@@ -246,7 +246,7 @@ export function AdminPanel() {
           {/* 전체 통계 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
             <h4 className="text-xs font-semibold text-muted mb-3">전체 통계</h4>
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="grid grid-cols-3 gap-3 text-center mb-3">
               <div>
                 <p className="text-2xl font-black">{engagement.total.views}</p>
                 <p className="text-[10px] text-muted">사진 조회</p>
@@ -258,6 +258,16 @@ export function AdminPanel() {
               <div>
                 <p className="text-2xl font-black">{engagement.total.rate}%</p>
                 <p className="text-[10px] text-muted">전환율</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/20">
+              <div className="text-center">
+                <p className="text-sm font-bold">{engagement.total.loggedInViews} / {engagement.total.loggedInClicks}</p>
+                <p className="text-[10px] text-muted">로그인 (조회/클릭)</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold">{engagement.total.anonViews} / {engagement.total.anonClicks}</p>
+                <p className="text-[10px] text-muted">비로그인 (조회/클릭)</p>
               </div>
             </div>
           </div>
