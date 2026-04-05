@@ -115,11 +115,13 @@ function MiniVoteBar({ entries }: { entries: PhotoEntry[] }) {
           style={{
             width: animated ? (total === 0 ? "0%" : `${kPct}%`) : "0%",
             background: "linear-gradient(to right, #e8193e 0%, #e8193e 60%, #6a1a3a 100%)",
+            willChange: "width", transform: "translateZ(0)",
           }} />
         <div className="absolute inset-y-0 right-0 transition-[width] duration-1000 ease-out"
           style={{
             width: animated ? (total === 0 ? "0%" : `${yPct}%`) : "0%",
             background: "linear-gradient(to left, #1a6dff 0%, #1a6dff 60%, #3a2a6a 100%)",
+            willChange: "width", transform: "translateZ(0)",
           }} />
         <div className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)" }} />
         <div className="absolute inset-0 flex items-center justify-between px-3">
