@@ -70,22 +70,24 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
             </div>
           </div>
 
-        {/* Progress bar - 3D liquid glass style */}
+        {/* Progress bar */}
         <div
-          className="relative h-14 rounded-[20px] overflow-hidden mb-2 transition-all duration-1000 ease-out"
+          className="relative h-14 rounded-[20px] overflow-hidden mb-2 bg-[#1a1a1a]"
           style={{
-            background: animated
-              ? (yonseiVotes === 0 && koreaVotes === 0)
-                ? "#2a2a2a"
-                : yonseiVotes === 0
-                  ? `linear-gradient(to right, #2a2a2a 0%, #2a2a2a 5%, #e8193e 30%, #e8193e 100%)`
-                  : koreaVotes === 0
-                    ? `linear-gradient(to right, #1a6dff 0%, #1a6dff 70%, #2a2a2a 95%, #2a2a2a 100%)`
-                    : `linear-gradient(to right, #1a6dff 0%, #1a6dff ${yonseiPct - 15}%, #3a2a6a ${yonseiPct}%, #6a1a3a ${yonseiPct}%, #e8193e ${yonseiPct + 15}%, #e8193e 100%)`
-              : "#1a1a1a",
             boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.3)",
           }}
         >
+          {/* Yonsei fills from left, Korea fills from right */}
+          <div className="absolute inset-y-0 left-0 transition-[width] duration-1000 ease-out"
+            style={{
+              width: animated ? (totalVotes === 0 ? "0%" : `${yonseiPct}%`) : "0%",
+              background: "linear-gradient(to right, #1a6dff 0%, #1a6dff 60%, #3a2a6a 100%)",
+            }} />
+          <div className="absolute inset-y-0 right-0 transition-[width] duration-1000 ease-out"
+            style={{
+              width: animated ? (totalVotes === 0 ? "0%" : `${koreaPct}%`) : "0%",
+              background: "linear-gradient(to left, #e8193e 0%, #e8193e 60%, #6a1a3a 100%)",
+            }} />
           {/* Top convex highlight */}
           <div
             className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
