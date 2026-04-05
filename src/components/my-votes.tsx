@@ -146,7 +146,6 @@ function MyVotesMasonry({
               </div>
               <div className="px-1 pt-2 pb-1">
                 <p className="text-sm font-medium truncate">{entry.nickname}</p>
-                <p className="text-xs text-muted">{entry.votes}표</p>
               </div>
             </button>
           ))}
