@@ -296,11 +296,11 @@ export function MasonryGallery() {
               <button
                 onClick={() => {
                   const url = typeof window !== "undefined" ? window.location.href : "";
-                  const message = `제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!\n${url}`;
+                  const text = "제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!";
                   if (navigator.share) {
-                    navigator.share({ text: message }).catch(() => {});
+                    navigator.share({ text, url }).catch(() => {});
                   } else {
-                    navigator.clipboard.writeText(message);
+                    navigator.clipboard.writeText(`${text}\n${url}`);
                     alert("링크가 복사되었습니다!");
                   }
                   trackEvent("share_feed");
