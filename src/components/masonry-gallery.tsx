@@ -260,7 +260,9 @@ export function MasonryGallery() {
     if (!anonKey || !url) return;
 
     try {
-      const supabase = createRealtimeClient(url, anonKey);
+      const supabase = createRealtimeClient(url, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
       const channel = supabase
         .channel("votes-realtime")
         .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
