@@ -27,6 +27,7 @@ export function MasonryGallery() {
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<Tab>("feed");
   const [showLogin, setShowLogin] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const handleVote = useCallback(async (id: string) => {
@@ -244,17 +245,33 @@ export function MasonryGallery() {
             </div>
 
             {/* Sort dropdown */}
-            <div className="flex justify-end mb-3 px-1">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
-                className="appearance-none bg-surface text-xs text-muted font-medium pl-3 pr-7 py-1.5 rounded-lg cursor-pointer outline-none border border-border/50"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b6b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center" }}
+            <div className="flex justify-end mb-3 px-1 relative">
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="flex items-center gap-1.5 bg-surface text-xs text-muted font-medium px-3 py-1.5 rounded-lg cursor-pointer border border-border/50 hover:text-foreground transition-colors"
               >
-                <option value="random">랜덤</option>
-                <option value="popular">인기순</option>
-                <option value="latest">최신순</option>
-              </select>
+                {sortBy === "random" ? "랜덤" : sortBy === "popular" ? "인기순" : "최신순"}
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {showSortMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                  <div className="absolute right-0 top-9 z-50 bg-card rounded-xl border border-border/50 shadow-2xl shadow-black/50 py-1 min-w-[100px] animate-card-rise">
+                    {([["random", "랜덤"], ["popular", "인기순"], ["latest", "최신순"]] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        onClick={() => { setSortBy(value); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer
+                          ${sortBy === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="columns-2 sm:columns-3 gap-3">
