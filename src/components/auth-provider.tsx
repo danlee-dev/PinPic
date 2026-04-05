@@ -27,7 +27,12 @@ function setCachedAdmin(v: boolean) {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(getCachedAdmin);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Restore cached admin status after mount (avoids hydration mismatch)
+  useEffect(() => {
+    if (getCachedAdmin()) setIsAdmin(true);
+  }, []);
 
   useEffect(() => {
     Promise.all([getUser(), checkIsAdmin()]).then(([u, admin]) => {
