@@ -71,7 +71,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
 
   const handleShare = () => {
     const url = typeof window !== "undefined" ? `${window.location.origin}/photo/${entry.id}` : "";
-    const text = `${entry.nickname}님의 사진에 투표해주세요! 제1회 캠퍼스 사진 고연전 - ${entry.school === "yonsei" ? "연세대" : "고려대"} 지원 사격!\n${url}`;
+    const text = `${entry.nickname}님의 사진에 투표해주세요! 제1회 캠퍼스 사진 고연전 - ${entry.school === "yonsei" ? "연세대" : "고려대"} 지원 사격! ${url}`;
     if (navigator.share) {
       navigator.share({ text }).catch(() => {});
     } else {
