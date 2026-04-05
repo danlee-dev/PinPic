@@ -50,7 +50,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
 
         {/* Battle stats */}
         <div className="relative">
-          <div className="flex items-end justify-between mb-3">
+          <div className="relative flex items-end justify-between mb-3">
             <div className="text-left flex items-center gap-2">
               <img src="/yonsei-logo.png" alt="연세대" className="w-8 h-8 rounded-full object-cover" />
               <div>
@@ -58,7 +58,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
                 <p className={`text-3xl font-black leading-none ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>{yonseiPct}%</p>
               </div>
             </div>
-            <div className="text-xs text-muted font-medium px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-1 text-xs text-muted font-medium px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               총 {totalVotes.toLocaleString()}표
             </div>
             <div className="text-right flex items-center gap-2">

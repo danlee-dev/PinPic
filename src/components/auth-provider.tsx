@@ -17,15 +17,24 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+function getCachedAdmin(): boolean {
+  try { return localStorage.getItem("pinpic_admin") === "1"; } catch { return false; }
+}
+function setCachedAdmin(v: boolean) {
+  try { localStorage.setItem("pinpic_admin", v ? "1" : "0"); } catch {}
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(getCachedAdmin);
 
   useEffect(() => {
     Promise.all([getUser(), checkIsAdmin()]).then(([u, admin]) => {
       setUser(u);
-      setIsAdmin(u ? admin : false);
+      const adminStatus = u ? admin : false;
+      setIsAdmin(adminStatus);
+      setCachedAdmin(adminStatus);
       setLoading(false);
     });
 
@@ -34,8 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (u) {
         const admin = await checkIsAdmin();
         setIsAdmin(admin);
+        setCachedAdmin(admin);
       } else {
         setIsAdmin(false);
+        setCachedAdmin(false);
       }
       setLoading(false);
     });
