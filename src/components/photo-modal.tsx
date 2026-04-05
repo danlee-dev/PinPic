@@ -182,7 +182,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               <path d="M12 16v-4" />
               <path d="M12 8h.01" />
             </svg>
-            이 사진은 어디서 촬영되었을까?
+            촬영 스팟 및 설정값 보기
           </button>
         </div>
       </div>
