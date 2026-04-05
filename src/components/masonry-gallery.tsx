@@ -93,16 +93,18 @@ export function MasonryGallery() {
   const [sortBy, setSortBy] = useState<"random" | "latest">("random");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTabState] = useState<Tab>(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "") as Tab;
-      if (["feed", "stats", "voted", "admin"].includes(hash)) return hash;
-    }
-    return "feed";
-  });
+  const [activeTab, setActiveTabState] = useState<Tab>("feed");
   const setActiveTab = useCallback((tab: Tab) => {
     setActiveTabState(tab);
     window.location.hash = tab;
+  }, []);
+
+  // Restore tab from URL hash after mount
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "") as Tab;
+    if (["feed", "stats", "voted", "admin"].includes(hash)) {
+      setActiveTabState(hash);
+    }
   }, []);
   const [showLogin, setShowLogin] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
