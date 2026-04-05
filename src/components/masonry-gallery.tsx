@@ -120,9 +120,22 @@ export function MasonryGallery() {
     return () => observer.disconnect();
   }, [loadMore, activeTab]);
 
+  // Shuffle entries once on initial load (stable during session)
+  const [shuffledEntries, setShuffledEntries] = useState<PhotoEntry[]>([]);
+  useEffect(() => {
+    if (entries.length > 0 && shuffledEntries.length === 0) {
+      const shuffled = [...entries].sort(() => Math.random() - 0.5);
+      setShuffledEntries(shuffled);
+    } else if (entries.length > shuffledEntries.length) {
+      // Append new entries (from infinite scroll) without re-shuffling existing
+      const newOnes = entries.slice(shuffledEntries.length);
+      setShuffledEntries((prev) => [...prev, ...newOnes.sort(() => Math.random() - 0.5)]);
+    }
+  }, [entries]);
+
   const filtered = filter === "all"
-    ? entries
-    : entries.filter((e) => e.school === filter);
+    ? shuffledEntries
+    : shuffledEntries.filter((e) => e.school === filter);
 
   return (
     <>
