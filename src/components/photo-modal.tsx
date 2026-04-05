@@ -155,7 +155,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
           {/* Share button */}
           <button
             onClick={handleShare}
-            className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-foreground bg-white/10 border border-white/15 hover:bg-white/15 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-black bg-white hover:bg-white/90 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />

@@ -308,10 +308,12 @@ export function MasonryGallery() {
                   }
                   trackEvent("share_feed");
                 }}
-                className="relative mt-4 mx-auto px-5 py-2.5 rounded-full text-xs font-semibold text-foreground cursor-pointer transition-all duration-200 active:scale-95 flex items-center gap-2"
+                className="relative mt-4 mx-auto px-6 py-3 rounded-full text-xs font-bold cursor-pointer transition-all duration-200 active:scale-95 hover:brightness-110 flex items-center gap-2"
                 style={{
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.12)",
+                  color: "#fff",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -336,7 +338,8 @@ export function MasonryGallery() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="닉네임, 동아리 검색"
-                  className="w-full bg-surface text-xs text-foreground pl-8 pr-3 py-2 rounded-lg border border-border/50 outline-none placeholder:text-muted/50 focus:border-white/20 transition-colors"
+                  className="w-full text-xs text-foreground pl-8 pr-3 h-9 rounded-xl outline-none placeholder:text-muted/50 focus:border-white/20 transition-colors bg-surface border border-white/8"
+                  style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
                 />
                 {searchQuery && (
                   <button
@@ -353,7 +356,8 @@ export function MasonryGallery() {
               <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="flex items-center gap-1.5 bg-surface text-xs text-muted font-medium px-3 py-1.5 rounded-lg cursor-pointer border border-border/50 hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 text-xs text-muted font-medium px-3 h-9 rounded-xl cursor-pointer hover:text-foreground transition-colors bg-surface border border-white/8"
+                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
               >
                 {filter === "korea" ? "고려대" : filter === "yonsei" ? "연세대" : sortBy === "random" ? "랜덤" : "최신순"}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -363,7 +367,13 @@ export function MasonryGallery() {
               {showSortMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
-                  <div className="absolute right-0 top-9 z-50 bg-card rounded-xl border border-border/50 shadow-2xl shadow-black/50 py-1 min-w-[100px] animate-card-rise">
+                  <div className="absolute right-0 top-9 z-50 rounded-xl py-1 min-w-[100px] animate-card-rise"
+                    style={{
+                      background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
+                    }}
+                  >
                     {([["random", "랜덤"], ["latest", "최신순"]] as const).map(([value, label]) => (
                       <button
                         key={value}
@@ -375,13 +385,14 @@ export function MasonryGallery() {
                       </button>
                     ))}
                     <div className="my-1 border-t border-border/30" />
-                    {([["korea", "고려대"], ["yonsei", "연세대"]] as const).map(([value, label]) => (
+                    {([["korea", "고려대", "/korea-logo.png"], ["yonsei", "연세대", "/yonsei-logo.png"]] as const).map(([value, label, logo]) => (
                       <button
                         key={value}
                         onClick={() => { setFilter(value); setShowSortMenu(false); }}
-                        className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer flex items-center gap-2
                           ${filter === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
                       >
+                        <img src={logo} alt={label} className="w-4 h-4 object-contain rounded-full" />
                         {label}
                       </button>
                     ))}

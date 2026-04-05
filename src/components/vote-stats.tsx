@@ -208,83 +208,62 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
         </div>
       </div>
 
-      {/* Top voted */}
+      {/* Ranking teaser */}
       <div className="mt-6 animate-card-rise" style={{ animationDelay: "0.4s" }}>
         <h3 className="text-sm font-semibold mb-3">인기 순위</h3>
-        <div className="space-y-3">
-          {(() => {
-            const ranked = [...entries]
-              .filter((e) => e.votes > 0)
-              .sort((a, b) => b.votes - a.votes)
-              .slice(0, 5);
-
-            const slots = Array.from({ length: 5 }, (_, i) => {
-              const entry = ranked[i];
-              if (entry) {
-                const medalColors = ["from-yellow-500/20 to-yellow-600/5", "from-gray-400/15 to-gray-500/5", "from-amber-600/15 to-amber-700/5"];
-                const borderColor = entry.school === "yonsei" ? "rgba(26,109,255,0.15)" : "rgba(232,25,62,0.15)";
-                return (
-                  <button
-                    key={entry.id}
-                    onClick={() => onPhotoClick(entry)}
-                    className={`w-full flex items-center gap-3 relative overflow-hidden rounded-2xl p-3 pr-4 text-left cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]`}
-                    style={{
-                      background: i < 3
-                        ? `linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)`
-                        : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${i < 3 ? borderColor : "rgba(255,255,255,0.05)"}`,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)",
-                    }}
-                  >
-                    {/* Medal gradient overlay for top 3 */}
-                    {i < 3 && (
-                      <div className={`absolute inset-0 bg-linear-to-r ${medalColors[i]} pointer-events-none`} />
-                    )}
-                    {/* Top highlight */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
-
-                    <span className={`relative w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold
-                      ${i === 0 ? "bg-yellow-500/20 text-yellow-400" : i === 1 ? "bg-gray-400/20 text-gray-300" : i === 2 ? "bg-amber-600/20 text-amber-400" : "text-muted"}`}>
-                      {i + 1}
-                    </span>
-                    <img
-                      src={entry.thumb_url || entry.image_url}
-                      alt={entry.nickname}
-                      className="relative w-11 h-11 rounded-xl object-cover"
-                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
-                    />
-                    <div className="relative flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{entry.nickname}</p>
-                      <p className={`text-[10px] font-semibold ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
-                        {entry.school === "yonsei" ? "연세대" : "고려대"}
-                      </p>
-                    </div>
-                    <div className="relative text-right">
-                      <p className="text-base font-bold">{entry.votes}</p>
-                      <p className="text-[9px] text-muted">votes</p>
-                    </div>
-                  </button>
-                );
-              }
+        <div className="relative">
+          <div className="space-y-3">
+            {Array.from({ length: 5 }, (_, i) => {
+              const medalStyles = [
+                "bg-yellow-500/20 text-yellow-400",
+                "bg-gray-400/20 text-gray-300",
+                "bg-amber-600/20 text-amber-400",
+                "text-muted",
+                "text-muted",
+              ];
+              const barWidths = ["w-4/5", "w-3/5", "w-1/2", "w-2/5", "w-1/3"];
               return (
                 <div
-                  key={`empty-${i}`}
-                  className="flex items-center gap-3 bg-surface/50 rounded-2xl p-3 pr-4 border border-dashed border-white/10"
+                  key={i}
+                  className="flex items-center gap-3 rounded-2xl p-3 pr-4"
+                  style={{
+                    background: i < 3
+                      ? "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)"
+                      : "rgba(255,255,255,0.03)",
+                    border: `1px solid rgba(255,255,255,${i < 3 ? "0.08" : "0.05"})`,
+                  }}
                 >
-                  <span className="w-6 text-center text-xs font-bold text-muted">{i + 1}</span>
-                  <div className="w-10 h-10 rounded-lg bg-border/30 flex items-center justify-center">
+                  <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold ${medalStyles[i]}`}>
+                    {i + 1}
+                  </span>
+                  <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center">
                     <span className="text-muted text-lg">?</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted">지금 투표해서 확인하세요</p>
-                    <p className="text-[10px] text-muted/60">{i + 1}위의 주인공은 누구?</p>
+                  <div className="flex-1 min-w-0">
+                    <div className={`h-3 ${barWidths[i]} rounded-full bg-white/8 mb-1.5`} />
+                    <div className="h-2 w-12 rounded-full bg-white/5" />
+                  </div>
+                  <div className="text-right">
+                    <div className="h-4 w-6 rounded bg-white/8" />
                   </div>
                 </div>
               );
-            });
-
-            return slots;
-          })()}
+            })}
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center backdrop-blur-md rounded-2xl"
+            style={{ background: "rgba(10,10,10,0.4)" }}
+          >
+            <div className="text-center px-6">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-neutral-700 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold mb-1">순위는 결과 발표 때 공개됩니다</p>
+              <p className="text-xs text-muted">지금은 투표에 집중하세요!</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
