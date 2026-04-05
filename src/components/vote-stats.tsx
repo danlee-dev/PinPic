@@ -242,7 +242,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
                       {i + 1}
                     </span>
                     <img
-                      src={entry.image_url}
+                      src={entry.thumb_url || entry.image_url}
                       alt={entry.nickname}
                       className="relative w-11 h-11 rounded-xl object-cover"
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}

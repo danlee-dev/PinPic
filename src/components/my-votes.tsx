@@ -65,7 +65,7 @@ export function MyVotes({ entries, votedIds, onPhotoClick }: MyVotesProps) {
           >
             <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">
               <img
-                src={entry.image_url}
+                src={entry.thumb_url || entry.image_url}
                 alt={entry.nickname}
                 className="w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]"
                 loading="lazy"

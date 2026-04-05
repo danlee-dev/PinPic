@@ -3,6 +3,7 @@ export type School = "yonsei" | "korea";
 export interface PhotoEntry {
   id: string;
   image_url: string;
+  thumb_url?: string;
   nickname: string;
   club?: string;
   school: School;
@@ -14,6 +15,7 @@ export interface PhotoEntry {
 export interface PhotoRow {
   id: string;
   image_url: string;
+  thumb_url: string | null;
   nickname: string;
   club: string | null;
   school: School;

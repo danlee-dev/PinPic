@@ -9,6 +9,7 @@ function toPhotoEntry(row: PhotoWithVotesRow): PhotoEntry {
   return {
     id: row.id,
     image_url: row.image_url,
+    thumb_url: row.thumb_url ?? undefined,
     nickname: row.nickname,
     club: row.club ?? undefined,
     school: row.school,

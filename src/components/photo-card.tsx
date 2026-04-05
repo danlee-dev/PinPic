@@ -47,7 +47,7 @@ export function PhotoCard({ entry, index, voted, onClick }: PhotoCardProps) {
           <div className="w-full skeleton-shimmer rounded-2xl" style={{ paddingBottom: "125%" }} />
         )}
         <img
-          src={entry.image_url}
+          src={entry.thumb_url || entry.image_url}
           alt={entry.nickname}
           className={`w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]
             ${imageLoaded ? "animate-image-reveal" : "opacity-0"}`}
