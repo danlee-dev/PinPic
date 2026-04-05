@@ -35,6 +35,8 @@ export function AdminPanel() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [photoSearch, setPhotoSearch] = useState("");
   const [engagement, setEngagement] = useState<EngagementStats | null>(null);
+  const [photoPage, setPhotoPage] = useState(0);
+  const [userPage, setUserPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -243,6 +245,20 @@ export function AdminPanel() {
 
       {tab === "clicks" && engagement && (
         <div className="space-y-4">
+          {/* 스프레드시트 링크 */}
+          <a
+            href="https://docs.google.com/spreadsheets/d/1qGGTXxQ_X-4HkrYpUhNWo0W2cEZc549d7EdSXSUw7pg/edit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 py-2.5 bg-surface rounded-xl border border-border/30 text-sm font-medium text-foreground hover:bg-white/5 transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" fill="#34A853" />
+              <path d="M7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z" fill="white" />
+            </svg>
+            Google Sheets에서 상세 데이터 보기
+          </a>
+
           {/* 전체 통계 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
             <h4 className="text-xs font-semibold text-muted mb-3">전체 통계</h4>
@@ -274,11 +290,11 @@ export function AdminPanel() {
 
           {/* 사진별 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
-            <h4 className="text-xs font-semibold text-muted mb-3">사진별</h4>
+            <h4 className="text-xs font-semibold text-muted mb-3">사진별 ({engagement.byPhoto.length}개)</h4>
             <div className="space-y-2">
               {engagement.byPhoto.length === 0 ? (
                 <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
-              ) : engagement.byPhoto.map((p) => (
+              ) : engagement.byPhoto.slice(photoPage * 10, photoPage * 10 + 10).map((p) => (
                 <div key={p.photo_id} className="flex items-center gap-2 py-1.5">
                   <SchoolBadge school={p.school as "yonsei" | "korea"} />
                   <span className="text-xs font-semibold flex-1 truncate">{p.nickname}</span>
@@ -288,15 +304,25 @@ export function AdminPanel() {
                 </div>
               ))}
             </div>
+            {engagement.byPhoto.length > 10 && (
+              <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
+                {Array.from({ length: Math.ceil(engagement.byPhoto.length / 10) }, (_, i) => (
+                  <button key={i} onClick={() => setPhotoPage(i)}
+                    className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${photoPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 사용자별 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
-            <h4 className="text-xs font-semibold text-muted mb-3">사용자별</h4>
+            <h4 className="text-xs font-semibold text-muted mb-3">사용자별 ({engagement.byUser.length}명)</h4>
             <div className="space-y-2">
               {engagement.byUser.length === 0 ? (
                 <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
-              ) : engagement.byUser.map((u) => (
+              ) : engagement.byUser.slice(userPage * 10, userPage * 10 + 10).map((u) => (
                 <div key={u.user_id} className="flex items-center gap-2 py-1.5">
                   <span className="text-xs flex-1 truncate">{u.email}</span>
                   <span className="text-xs text-muted">{u.views}뷰</span>
@@ -305,6 +331,16 @@ export function AdminPanel() {
                 </div>
               ))}
             </div>
+            {engagement.byUser.length > 10 && (
+              <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
+                {Array.from({ length: Math.ceil(engagement.byUser.length / 10) }, (_, i) => (
+                  <button key={i} onClick={() => setUserPage(i)}
+                    className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${userPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
