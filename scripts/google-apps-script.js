@@ -111,6 +111,7 @@ function onFormSubmit(e) {
 
     if (insertResult.success) {
       Logger.log("성공: " + nickname + " (" + schoolCode + ")" + (thumbUrl ? " +thumb" : ""));
+      notifyAdmins(nickname, schoolCode, imageUrl);
     } else {
       Logger.log("DB 삽입 실패: " + insertResult.error);
     }
@@ -238,6 +239,50 @@ function generateId() {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+/**
+ * 관리자들에게 새 사진 알림 이메일 전송
+ */
+function notifyAdmins(nickname, school, imageUrl) {
+  try {
+    var emails = fetchAdminEmails();
+    if (emails.length === 0) return;
+
+    var schoolName = school === "yonsei" ? "연세대" : "고려대";
+    var subject = "[PinPic] 새 사진 승인 대기: " + nickname + " (" + schoolName + ")";
+    var body = nickname + "님(" + schoolName + ")이 새 사진을 제출했습니다.\n\n"
+      + "승인 대기 탭에서 확인해주세요:\n"
+      + "https://pinpic.vercel.app\n\n"
+      + "(관리자 계정으로 로그인 후 관리 탭 > 승인 대기)";
+
+    emails.forEach(function(email) {
+      MailApp.sendEmail(email, subject, body);
+    });
+    Logger.log("관리자 알림 전송: " + emails.join(", "));
+  } catch (e) {
+    Logger.log("알림 전송 실패: " + e.toString());
+  }
+}
+
+/**
+ * Supabase admins 테이블에서 관리자 이메일 목록 가져오기
+ */
+function fetchAdminEmails() {
+  var url = SUPABASE_URL + "/rest/v1/admins?select=email";
+  var response = UrlFetchApp.fetch(url, {
+    method: "get",
+    headers: {
+      "Authorization": "Bearer " + SUPABASE_SECRET_KEY,
+      "apikey": SUPABASE_SECRET_KEY,
+    },
+    muteHttpExceptions: true,
+  });
+  if (response.getResponseCode() === 200) {
+    var data = JSON.parse(response.getContentText());
+    return data.map(function(row) { return row.email; });
+  }
+  return [];
 }
 
 // ============================================================
