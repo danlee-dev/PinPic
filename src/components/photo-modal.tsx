@@ -16,7 +16,7 @@ interface PhotoModalProps {
   votingPeriod?: VotingPeriod | null;
 }
 
-export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during" }: PhotoModalProps) {
+export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during", votingPeriod }: PhotoModalProps) {
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -153,7 +153,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {!canVote
-                ? (votingStatus === "before" ? "투표 기간 전" : "투표 종료")
+                ? (votingStatus === "before" ? `${formatKST(votingPeriod?.start)}부터 투표 시작` : "투표 종료")
                 : voted ? "투표 취소" : "투표하기"}
             </span>
           </button>
@@ -174,4 +174,10 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
       </div>
     </div>
   );
+}
+
+function formatKST(utcStr?: string): string {
+  if (!utcStr) return "";
+  const d = new Date(utcStr);
+  return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
