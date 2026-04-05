@@ -144,7 +144,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               ${!canVote ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}
               ${votePulse ? "animate-vote-pulse" : ""}
               ${voted
-                ? "bg-heart text-white shadow-lg shadow-heart/30"
+                ? "bg-heart text-white shadow-lg shadow-heart/30 border border-transparent"
                 : "bg-surface text-foreground border border-border hover:bg-white/10"
               }`}
           >
