@@ -243,22 +243,18 @@ export function MasonryGallery() {
               </button>
             </div>
 
-            {/* Sort dropdown - between hero and feed */}
-            <div className="flex justify-center mb-3">
-              <div className="relative inline-flex">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
-                  className="appearance-none bg-transparent text-[11px] text-muted/60 font-medium pl-2 pr-5 py-1 rounded cursor-pointer outline-none transition-colors hover:text-muted"
-                >
-                  <option value="random">랜덤</option>
-                  <option value="popular">인기순</option>
-                  <option value="latest">최신순</option>
-                </select>
-                <svg className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-muted/40" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
+            {/* Sort dropdown */}
+            <div className="flex justify-end mb-3 px-1">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
+                className="appearance-none bg-surface text-xs text-muted font-medium pl-3 pr-7 py-1.5 rounded-lg cursor-pointer outline-none border border-border/50"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b6b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center" }}
+              >
+                <option value="random">랜덤</option>
+                <option value="popular">인기순</option>
+                <option value="latest">최신순</option>
+              </select>
             </div>
 
             <div className="columns-2 sm:columns-3 gap-3">
