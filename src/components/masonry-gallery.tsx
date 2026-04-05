@@ -156,32 +156,19 @@ export function MasonryGallery() {
       <div key={activeTab} className="animate-page-in">
         {activeTab === "feed" && (
           <main className="max-w-3xl mx-auto px-3 pt-2 pb-28">
-            {/* Hero section with school color accents */}
-            <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl py-8 px-4"
-              style={{
-                background: "linear-gradient(135deg, rgba(26,109,255,0.12) 0%, rgba(10,10,10,0.9) 40%, rgba(10,10,10,0.9) 60%, rgba(232,25,62,0.12) 100%)",
-              }}
+            {/* Hero section with poster banner */}
+            <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl"
             >
-              {/* Subtle glow orbs */}
-              <div className="absolute top-0 left-0 w-32 h-32 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #1a6dff 0%, transparent 70%)" }} />
-              <div className="absolute bottom-0 right-0 w-32 h-32 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #e8193e 0%, transparent 70%)" }} />
-              {/* Glass border */}
-              <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.06)" }} />
+              {/* Poster banner */}
+              <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
 
-              <h2 className="relative text-2xl font-bold tracking-tight mb-1">사진 투표</h2>
-              <p className="relative text-sm text-muted mb-5">마음에 드는 사진을 더블클릭해서 투표하세요</p>
-
-              <div className="relative flex items-center justify-center gap-3 mb-5">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(26,109,255,0.15)", border: "1px solid rgba(26,109,255,0.2)" }}>
-                  <img src="/yonsei-logo.png" alt="연세대" className="w-5 h-5 rounded-full object-cover" />
-                  <span className="text-yonsei text-xs font-semibold">연세대</span>
-                </div>
-                <span className="text-muted text-xs font-bold">VS</span>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(232,25,62,0.15)", border: "1px solid rgba(232,25,62,0.2)" }}>
-                  <img src="/korea-logo.png" alt="고려대" className="w-5 h-5 object-contain" />
-                  <span className="text-korea text-xs font-semibold">고려대</span>
-                </div>
-              </div>
+              {/* Vote bar + share area */}
+              <div className="relative px-5 pt-4 pb-5"
+                style={{
+                  background: "linear-gradient(135deg, rgba(26,109,255,0.1) 0%, rgba(10,10,10,0.95) 40%, rgba(10,10,10,0.95) 60%, rgba(232,25,62,0.1) 100%)",
+                }}
+              >
+                <div className="absolute inset-0 pointer-events-none" style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", borderRight: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", borderRadius: "0 0 24px 24px" }} />
 
               {/* Mini vote bar */}
               {entries.length > 0 && (() => {
@@ -242,6 +229,7 @@ export function MasonryGallery() {
                 </svg>
                 단톡방에 화력 지원 요청하기
               </button>
+              </div>
             </div>
 
             {/* Sort dropdown */}

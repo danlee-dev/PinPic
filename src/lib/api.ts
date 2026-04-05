@@ -64,10 +64,9 @@ export async function voteForPhoto(photoId: string): Promise<boolean> {
 
   const { error } = await supabase
     .from("votes")
-    .insert({ photo_id: photoId, voter_id: user.id });
+    .upsert({ photo_id: photoId, voter_id: user.id }, { onConflict: "photo_id,voter_id" });
 
   if (error) {
-    if (error.code === "23505") return false; // Already voted
     console.error("Failed to vote:", error);
     return false;
   }
