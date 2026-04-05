@@ -164,13 +164,17 @@ export function MasonryGallery() {
   const [searchQuery, setSearchQuery] = useState("");
   const [votingPeriod, setVotingPeriod] = useState<VotingPeriod | null>(null);
   const [showVotingAlert, setShowVotingAlert] = useState(false);
+  const [votingLoaded, setVotingLoaded] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const canVote = isAdmin || isVotingOpen(votingPeriod);
   const votingStatus = getVotingStatus(votingPeriod);
 
   useEffect(() => {
-    fetchVotingPeriod().then(setVotingPeriod);
+    fetchVotingPeriod().then((vp) => {
+      setVotingPeriod(vp);
+      setVotingLoaded(true);
+    });
   }, []);
 
   const handleVote = useCallback(async (id: string) => {
@@ -513,7 +517,7 @@ export function MasonryGallery() {
 
 
       {/* Fixed voting period banner */}
-      {votingStatus !== "during" && !isAdmin && (
+      {votingLoaded && votingStatus !== "during" && !isAdmin && (
         <div className="fixed top-40 left-0 right-0 z-30 flex justify-center pointer-events-none">
           <div className="bg-black/70 backdrop-blur-sm text-white text-sm font-semibold px-6 py-3.5 rounded-full border border-white/20 shadow-lg pointer-events-auto">
             {votingStatus === "before"
