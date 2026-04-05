@@ -215,12 +215,17 @@ export function MasonryGallery() {
         return base;
       case "random":
       default: {
-        const seed = shuffleSeedRef.current;
-        return [...base].sort((a, b) => {
-          const hashA = a.id.split("").reduce((s, c) => s + c.charCodeAt(0) * seed, 0);
-          const hashB = b.id.split("").reduce((s, c) => s + c.charCodeAt(0) * seed, 0);
-          return hashA - hashB;
-        });
+        const arr = [...base];
+        let s = Math.floor(shuffleSeedRef.current * 2147483647) | 1;
+        const rand = () => {
+          s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+          return (s >>> 0) / 4294967296;
+        };
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(rand() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
       }
     }
   }, [uniqueEntries, filter, sortBy, searchQuery]);
