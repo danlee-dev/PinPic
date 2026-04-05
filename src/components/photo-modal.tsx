@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import { PhotoEntry } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
@@ -17,11 +17,13 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
     if (entry) {
       setVotePulse(false);
       setClosing(false);
+      setImageLoaded(false);
       requestAnimationFrame(() => setVisible(true));
     } else {
       setVisible(false);
@@ -104,11 +106,15 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoMod
 
         {/* Photo */}
         <div className="relative overflow-hidden p-3 pb-0">
+          {!imageLoaded && (
+            <div className="w-full rounded-2xl skeleton-shimmer" style={{ paddingBottom: "125%" }} />
+          )}
           <img
             src={entry.image_url}
             alt={entry.nickname}
-            className="w-full rounded-2xl"
+            className={`w-full rounded-2xl transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0 absolute inset-3"}`}
             draggable={false}
+            onLoad={() => setImageLoaded(true)}
           />
         </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { PhotoEntry, School } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { useAuth } from "./auth-provider";
@@ -122,27 +122,37 @@ export function MasonryGallery() {
     return () => observer.disconnect();
   }, [loadMore, activeTab]);
 
-  // Shuffle order (stable per session)
-  const [shuffleOrder, setShuffleOrder] = useState<string[]>([]);
-  useEffect(() => {
-    if (entries.length > shuffleOrder.length) {
-      const newIds = entries.slice(shuffleOrder.length).map((e) => e.id);
-      setShuffleOrder((prev) => [...prev, ...newIds].sort(() => Math.random() - 0.5));
-    }
+  // Shuffle seed (stable per session, set once)
+  const shuffleSeedRef = useRef<number>(Math.random());
+
+  // Deduplicate entries by id
+  const uniqueEntries = useMemo(() => {
+    const seen = new Set<string>();
+    return entries.filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
   }, [entries]);
 
-  const sorted = (() => {
-    const base = filter === "all" ? entries : entries.filter((e) => e.school === filter);
+  const sorted = useMemo(() => {
+    const base = filter === "all" ? uniqueEntries : uniqueEntries.filter((e) => e.school === filter);
     switch (sortBy) {
       case "popular":
         return [...base].sort((a, b) => b.votes - a.votes);
       case "latest":
         return base;
       case "random":
-      default:
-        return [...base].sort((a, b) => shuffleOrder.indexOf(a.id) - shuffleOrder.indexOf(b.id));
+      default: {
+        const seed = shuffleSeedRef.current;
+        return [...base].sort((a, b) => {
+          const hashA = a.id.split("").reduce((s, c) => s + c.charCodeAt(0) * seed, 0);
+          const hashB = b.id.split("").reduce((s, c) => s + c.charCodeAt(0) * seed, 0);
+          return hashA - hashB;
+        });
+      }
     }
-  })();
+  }, [uniqueEntries, filter, sortBy]);
 
   return (
     <>
