@@ -343,18 +343,7 @@ export function MasonryGallery() {
             <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl"
             >
               {/* Poster banner */}
-              <div className="relative">
-                <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
-                {votingStatus !== "during" && !isAdmin && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold px-5 py-2.5 rounded-full border border-white/20 shadow-lg">
-                      {votingStatus === "before"
-                        ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
-                        : "투표가 종료되었습니다"}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
 
               {/* Vote bar + share area */}
               <div className="relative px-5 pt-4 pb-5"
@@ -516,6 +505,17 @@ export function MasonryGallery() {
       </div>
 
 
+      {/* Fixed voting period banner */}
+      {votingStatus !== "during" && !isAdmin && (
+        <div className="fixed top-40 left-0 right-0 z-30 flex justify-center pointer-events-none">
+          <div className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold px-5 py-2.5 rounded-full border border-white/20 shadow-lg pointer-events-auto">
+            {votingStatus === "before"
+              ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
+              : "투표가 종료되었습니다"}
+          </div>
+        </div>
+      )}
+
       <BottomDock
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -537,8 +537,8 @@ export function MasonryGallery() {
       {showLogin && <LoginPrompt onClose={() => setShowLogin(false)} />}
 
       {showVotingAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70" onClick={() => setShowVotingAlert(false)}>
-          <div className="bg-card rounded-3xl p-6 max-w-sm w-full text-center border border-white/10 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setShowVotingAlert(false)}>
+          <div className="bg-card rounded-3xl p-6 max-w-sm w-full text-center border border-white/10" style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.5), 0 8px 20px rgba(0,0,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-surface flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-foreground">
                 <circle cx="12" cy="12" r="10" />
