@@ -31,6 +31,7 @@ export function AdminPanel() {
   const [period, setPeriod] = useState<VotingPeriod | null>(null);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [photoSearch, setPhotoSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -209,7 +210,20 @@ export function AdminPanel() {
 
       {tab === "photos" && (
         <div className="space-y-3">
-          {allPhotos.map((photo) => (
+          <input
+            type="text"
+            value={photoSearch}
+            onChange={(e) => setPhotoSearch(e.target.value)}
+            placeholder="닉네임 또는 동아리로 검색"
+            className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none placeholder:text-muted/50"
+          />
+          {allPhotos
+            .filter((p) => {
+              if (!photoSearch.trim()) return true;
+              const q = photoSearch.trim().toLowerCase();
+              return p.nickname.toLowerCase().includes(q) || (p.club && p.club.toLowerCase().includes(q));
+            })
+            .map((photo) => (
             <PhotoAdminCard
               key={photo.id}
               photo={photo}
