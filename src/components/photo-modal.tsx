@@ -9,10 +9,11 @@ interface PhotoModalProps {
   entry: PhotoEntry | null;
   voted: boolean;
   onVote: (id: string) => void;
+  onUnvote: (id: string) => void;
   onClose: () => void;
 }
 
-export function PhotoModal({ entry, voted, onVote, onClose }: PhotoModalProps) {
+export function PhotoModal({ entry, voted, onVote, onUnvote, onClose }: PhotoModalProps) {
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -55,11 +56,15 @@ export function PhotoModal({ entry, voted, onVote, onClose }: PhotoModalProps) {
   if (!entry) return null;
 
   const triggerVote = () => {
-    if (voted) return;
-    onVote(entry.id);
-    setVotePulse(true);
-    setTimeout(() => setVotePulse(false), 500);
-    trackEvent("vote_complete", { photo_id: entry.id, school: entry.school });
+    if (voted) {
+      onUnvote(entry.id);
+      trackEvent("vote_cancel", { photo_id: entry.id, school: entry.school });
+    } else {
+      onVote(entry.id);
+      setVotePulse(true);
+      setTimeout(() => setVotePulse(false), 500);
+      trackEvent("vote_complete", { photo_id: entry.id, school: entry.school });
+    }
   };
 
   const handleShare = () => {
@@ -126,19 +131,18 @@ export function PhotoModal({ entry, voted, onVote, onClose }: PhotoModalProps) {
           {/* Vote button */}
           <button
             onClick={triggerVote}
-            disabled={voted}
-            className={`relative w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-300 cursor-pointer
+            className={`relative w-full py-3.5 rounded-2xl font-semibold text-base transition-all duration-300 cursor-pointer active:scale-[0.97]
               ${votePulse ? "animate-vote-pulse" : ""}
               ${voted
                 ? "bg-heart text-white shadow-lg shadow-heart/30"
-                : "bg-surface text-foreground border border-border hover:bg-white/10 active:scale-[0.97]"
+                : "bg-surface text-foreground border border-border hover:bg-white/10"
               }`}
           >
             <span className="flex items-center justify-center gap-2">
               <svg width="18" height="18" viewBox="0 0 24 24" fill={voted ? "white" : "none"} stroke={voted ? "white" : "currentColor"} strokeWidth="2">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
-              {voted ? "투표 완료" : "투표하기"}
+              {voted ? "투표 취소" : "투표하기"}
             </span>
           </button>
 

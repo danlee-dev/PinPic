@@ -74,3 +74,22 @@ export async function voteForPhoto(photoId: string): Promise<boolean> {
 
   return true;
 }
+
+export async function unvotePhoto(photoId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { error } = await supabase
+    .from("votes")
+    .delete()
+    .eq("photo_id", photoId)
+    .eq("voter_id", user.id);
+
+  if (error) {
+    console.error("Failed to unvote:", error);
+    return false;
+  }
+
+  return true;
+}

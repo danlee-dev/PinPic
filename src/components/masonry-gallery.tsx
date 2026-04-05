@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { PhotoEntry, School } from "@/lib/types";
-import { fetchPhotos, fetchMyVotedIds, voteForPhoto } from "@/lib/api";
+import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -52,6 +52,27 @@ export function MasonryGallery() {
       );
     }
   }, [user]);
+
+  const handleUnvote = useCallback(async (id: string) => {
+    // Optimistic update
+    setVotedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setEntries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, votes: Math.max(0, e.votes - 1) } : e))
+    );
+
+    const success = await unvotePhoto(id);
+    if (!success) {
+      // Revert
+      setVotedIds((prev) => new Set(prev).add(id));
+      setEntries((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, votes: e.votes + 1 } : e))
+      );
+    }
+  }, []);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -267,6 +288,7 @@ export function MasonryGallery() {
         entry={selectedEntry}
         voted={selectedEntry ? votedIds.has(selectedEntry.id) : false}
         onVote={handleVote}
+        onUnvote={handleUnvote}
         onClose={() => setSelectedEntry(null)}
       />
 
