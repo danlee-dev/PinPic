@@ -92,15 +92,15 @@ export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin }: Bott
                   }`}
               >
                 {/* Active pill background */}
-                <div className="absolute -inset-0.5 rounded-full transition-all duration-300 ease-out"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
-                    boxShadow: isActive ? "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 10px rgba(0,0,0,0.25)" : "none",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    opacity: isActive ? 1 : 0,
-                    transform: isActive ? "scale(1)" : "scale(0.85)",
-                  }}
-                />
+                {isActive && (
+                  <div className="absolute -inset-0.5 rounded-full animate-dock-pill-in"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.03) 100%)",
+                      boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 10px rgba(0,0,0,0.25)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  />
+                )}
                 <span className={`relative transition-transform duration-300 ${isActive ? "scale-110" : "scale-100"}`}>
                   {tab.icon(isActive)}
                 </span>
