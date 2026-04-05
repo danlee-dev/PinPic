@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
@@ -253,43 +252,14 @@ export function MasonryGallery() {
     }
   }, [user]);
 
-  // Realtime vote updates + polling fallback
+  // Poll for vote updates every 15 seconds
   useEffect(() => {
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
-    let cleanup: (() => void) | undefined;
-
-    if (anonKey && url) {
-      try {
-        const rt = createSupabaseClient(url, anonKey, {
-          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-        });
-        const channel = rt
-          .channel("votes-realtime")
-          .on("postgres_changes", { event: "*", schema: "public", table: "votes" }, () => {
-            fetchPhotos(0, 100).then((fresh) => {
-              if (fresh.length > 0) setEntries(fresh);
-            });
-          })
-          .subscribe();
-        cleanup = () => rt.removeChannel(channel);
-      } catch {
-        // fallback to polling
-      }
-    }
-
-    // Polling as fallback (also covers Realtime failures)
     const interval = setInterval(() => {
       fetchPhotos(0, 100).then((fresh) => {
         if (fresh.length > 0) setEntries(fresh);
       });
-    }, 30000);
-
-    return () => {
-      cleanup?.();
-      clearInterval(interval);
-    };
+    }, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
