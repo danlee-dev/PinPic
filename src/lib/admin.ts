@@ -127,6 +127,29 @@ export async function removeAdmin(userId: string): Promise<boolean> {
   return !error;
 }
 
+export async function fetchPhotoClicks(): Promise<{ photo_id: string; nickname: string; school: string; click_count: number }[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("photo_clicks")
+    .select("photo_id, photos(nickname, school)")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const counts: Record<string, { nickname: string; school: string; count: number }> = {};
+  for (const row of data as any[]) {
+    const pid = row.photo_id;
+    if (!counts[pid]) {
+      counts[pid] = { nickname: row.photos?.nickname || "?", school: row.photos?.school || "?", count: 0 };
+    }
+    counts[pid].count++;
+  }
+
+  return Object.entries(counts)
+    .map(([photo_id, v]) => ({ photo_id, nickname: v.nickname, school: v.school, click_count: v.count }))
+    .sort((a, b) => b.click_count - a.click_count);
+}
+
 export function isVotingOpen(period: VotingPeriod | null): boolean {
   if (!period) return false;
   const now = new Date();

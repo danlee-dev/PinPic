@@ -93,3 +93,12 @@ export async function unvotePhoto(photoId: string): Promise<boolean> {
 
   return true;
 }
+
+export async function recordPhotoClick(photoId: string): Promise<void> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  await supabase.from("photo_clicks").insert({
+    photo_id: photoId,
+    user_id: user?.id || null,
+  });
+}

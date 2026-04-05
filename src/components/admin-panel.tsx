@@ -13,10 +13,11 @@ import {
   fetchAdmins,
   addAdmin,
   removeAdmin,
+  fetchPhotoClicks,
 } from "@/lib/admin";
 import { SchoolBadge } from "./school-badge";
 
-type AdminTab = "pending" | "photos" | "settings";
+type AdminTab = "pending" | "photos" | "clicks" | "settings";
 
 interface ConfirmAction {
   type: "reject" | "delete";
@@ -32,6 +33,7 @@ export function AdminPanel() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [photoSearch, setPhotoSearch] = useState("");
+  const [clicks, setClicks] = useState<{ photo_id: string; nickname: string; school: string; click_count: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -40,13 +42,15 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, adm] = await Promise.all([
+    const [p, all, vp, adm, cl] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
       fetchAdmins(),
+      fetchPhotoClicks(),
     ]);
     setPending(p);
+    setClicks(cl);
     setAllPhotos(all);
     setPeriod(vp);
     setAdmins(adm);
@@ -177,6 +181,7 @@ export function AdminPanel() {
         {([
           ["pending", `승인 대기 (${pending.length})`],
           ["photos", "사진 관리"],
+          ["clicks", `관심도 (${clicks.reduce((s, c) => s + c.click_count, 0)})`],
           ["settings", "설정"],
         ] as const).map(([value, label]) => (
           <button
@@ -232,6 +237,24 @@ export function AdminPanel() {
               onDelete={() => setConfirmAction({ type: "delete", photoId: photo.id, photoName: photo.nickname })}
             />
           ))}
+        </div>
+      )}
+
+      {tab === "clicks" && (
+        <div className="space-y-3">
+          {clicks.length === 0 ? (
+            <div className="text-center py-12 text-muted text-sm">아직 클릭 기록이 없습니다</div>
+          ) : (
+            clicks.map((c, i) => (
+              <div key={c.photo_id} className="flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border/30">
+                <span className="w-6 text-center text-xs font-bold text-muted">{i + 1}</span>
+                <SchoolBadge school={c.school as "yonsei" | "korea"} />
+                <span className="text-sm font-semibold flex-1 truncate">{c.nickname}</span>
+                <span className="text-sm font-bold">{c.click_count}</span>
+                <span className="text-[10px] text-muted">clicks</span>
+              </div>
+            ))
+          )}
         </div>
       )}
 
