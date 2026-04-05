@@ -56,6 +56,17 @@ function onFormSubmit(e) {
     const ext = contentType === "image/png" ? ".png" : ".jpg";
     const uniqueId = Date.now() + "-" + generateId();
 
+    // 이미지 비율 계산
+    var aspectRatio = 0.8;
+    try {
+      var imgSize = getImageSize(fileId);
+      if (imgSize) {
+        aspectRatio = +(imgSize.width / imgSize.height).toFixed(4);
+      }
+    } catch (e) {
+      Logger.log("비율 계산 실패 (기본값 사용): " + e.toString());
+    }
+
     // 1. 원본 업로드
     const origPath = "photos/" + uniqueId + ext;
     const origResult = uploadToSupabase(origPath, blob.getBytes(), contentType);
@@ -90,7 +101,7 @@ function onFormSubmit(e) {
       nickname: nickname,
       club: club,
       school: schoolCode,
-      aspect_ratio: 1.25,
+      aspect_ratio: aspectRatio,
     };
     if (thumbUrl) {
       photoData.thumb_url = thumbUrl;
@@ -107,6 +118,24 @@ function onFormSubmit(e) {
   } catch (error) {
     Logger.log("에러 발생: " + error.toString());
   }
+}
+
+/**
+ * Drive API로 이미지 크기 가져오기
+ */
+function getImageSize(fileId) {
+  var url = "https://www.googleapis.com/drive/v3/files/" + fileId + "?fields=imageMediaMetadata";
+  var response = UrlFetchApp.fetch(url, {
+    headers: { "Authorization": "Bearer " + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true,
+  });
+  if (response.getResponseCode() === 200) {
+    var meta = JSON.parse(response.getContentText());
+    if (meta.imageMediaMetadata) {
+      return { width: meta.imageMediaMetadata.width, height: meta.imageMediaMetadata.height };
+    }
+  }
+  return null;
 }
 
 /**

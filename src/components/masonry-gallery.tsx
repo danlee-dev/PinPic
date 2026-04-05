@@ -38,17 +38,17 @@ function distributeToColumns<T extends { aspect_ratio: number }>(
   const heights = new Array(colCount).fill(0);
 
   for (let i = 0; i < items.length; i++) {
-    // Find shortest column, prefer rightmost on tie
-    let minIdx = colCount - 1;
-    let minH = heights[colCount - 1];
-    for (let c = colCount - 2; c >= 0; c--) {
+    // Find shortest column, prefer leftmost on tie (natural reading order)
+    let minIdx = 0;
+    let minH = heights[0];
+    for (let c = 1; c < colCount; c++) {
       if (heights[c] < minH) {
         minH = heights[c];
         minIdx = c;
       }
     }
     cols[minIdx].push({ item: items[i], globalIndex: i });
-    heights[minIdx] += 1 / (items[i].aspect_ratio || 1.25);
+    heights[minIdx] += 1 / (items[i].aspect_ratio || 0.8);
   }
 
   return cols;
@@ -296,11 +296,11 @@ export function MasonryGallery() {
               <button
                 onClick={() => {
                   const url = typeof window !== "undefined" ? window.location.href : "";
-                  const text = "제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!";
+                  const message = `제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!\n${url}`;
                   if (navigator.share) {
-                    navigator.share({ title: "PinPic - 연고전 사진 대결", text, url }).catch(() => {});
+                    navigator.share({ text: message }).catch(() => {});
                   } else {
-                    navigator.clipboard.writeText(`${text}\n${url}`);
+                    navigator.clipboard.writeText(message);
                     alert("링크가 복사되었습니다!");
                   }
                   trackEvent("share_feed");

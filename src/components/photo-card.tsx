@@ -43,13 +43,11 @@ export function PhotoCard({ entry, index, voted, onClick }: PhotoCardProps) {
       onClick={() => onClick(entry)}
     >
       <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30 max-h-[400px]">
-        {!imageLoaded && (
-          <div className="w-full skeleton-shimmer rounded-2xl" style={{ paddingBottom: "125%" }} />
-        )}
+        <div className={`w-full ${imageLoaded ? "" : "skeleton-shimmer"}`} style={{ paddingBottom: `${(1 / (entry.aspect_ratio || 0.8)) * 100}%` }} />
         <img
           src={entry.thumb_url || entry.image_url}
           alt={entry.nickname}
-          className={`w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]
+          className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]
             ${imageLoaded ? "animate-image-reveal" : "opacity-0"}`}
           loading="lazy"
           draggable={false}
