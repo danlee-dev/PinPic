@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "./auth-provider";
 import { signInWithGoogle, signOut } from "@/lib/auth";
 
@@ -30,9 +31,20 @@ export function UserButton() {
   const avatar = user.user_metadata?.avatar_url;
   const name = user.user_metadata?.full_name || user.email?.split("@")[0];
 
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (showMenu && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+  }, [showMenu]);
+
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         onClick={() => setShowMenu(!showMenu)}
         className="w-8 h-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/40 transition-colors cursor-pointer"
       >
@@ -45,10 +57,17 @@ export function UserButton() {
         )}
       </button>
 
-      {showMenu && (
+      {showMenu && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-          <div className="absolute right-0 top-10 z-50 w-48 bg-card rounded-xl border border-border/50 shadow-2xl shadow-black/40 p-1 animate-card-rise">
+          <div className="fixed inset-0 z-[60]" onClick={() => setShowMenu(false)} />
+          <div className="fixed z-[61] w-48 rounded-xl p-1 animate-card-rise"
+            style={{
+              top: menuPos.top,
+              right: menuPos.right,
+              background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}>
             <div className="px-3 py-2 border-b border-border/30">
               <p className="text-sm font-medium truncate">{name}</p>
               <p className="text-[11px] text-muted truncate">{user.email}</p>
@@ -63,7 +82,8 @@ export function UserButton() {
               로그아웃
             </button>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
