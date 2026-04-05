@@ -75,17 +75,13 @@ export function PhotoCard({ entry, index, voted, onVote, onClick }: PhotoCardPro
     >
       <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">
         {!imageLoaded && (
-          <div
-            className="absolute inset-0 skeleton-shimmer rounded-2xl"
-            style={{ aspectRatio: `1 / ${entry.aspect_ratio}` }}
-          />
+          <div className="w-full skeleton-shimmer rounded-2xl" style={{ paddingBottom: "125%" }} />
         )}
         <img
           src={entry.image_url}
           alt={entry.nickname}
           className={`w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]
             ${imageLoaded ? "animate-image-reveal" : "opacity-0"}`}
-          style={{ aspectRatio: `1 / ${entry.aspect_ratio}` }}
           loading="lazy"
           draggable={false}
           onLoad={() => setImageLoaded(true)}

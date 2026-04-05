@@ -112,7 +112,6 @@ export function PhotoModal({ entry, voted, onVote, onClose }: PhotoModalProps) {
             src={entry.image_url}
             alt={entry.nickname}
             className="w-full rounded-2xl"
-            style={{ aspectRatio: `1 / ${entry.aspect_ratio}` }}
             draggable={false}
           />
           <VoteBurst active={showBurst} />

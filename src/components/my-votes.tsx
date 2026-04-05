@@ -68,7 +68,6 @@ export function MyVotes({ entries, votedIds, onPhotoClick }: MyVotesProps) {
                 src={entry.image_url}
                 alt={entry.nickname}
                 className="w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]"
-                style={{ aspectRatio: `1 / ${entry.aspect_ratio}` }}
                 loading="lazy"
               />
               <div className="absolute top-2.5 left-2.5">
