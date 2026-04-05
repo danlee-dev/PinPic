@@ -179,13 +179,22 @@ export async function fetchEngagementStats(): Promise<EngagementStats> {
     userMap[c.user_id].clicks++;
   }
 
-  // Resolve user emails
+  // Resolve user emails via server API
   const userIds = Object.keys(userMap);
   let emailMap: Record<string, string> = {};
   if (userIds.length > 0) {
-    const { data: users } = await supabase.from("admins").select("user_id"); // dummy to get auth - we'll use user_id as fallback
-    // Since we can't query auth.users from client, use user_id as identifier
-    emailMap = Object.fromEntries(userIds.map(id => [id, id.slice(0, 8) + "..."]));
+    try {
+      const res = await fetch("/api/admin/user-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) emailMap = await res.json();
+    } catch {}
+    // Fallback for any missing
+    for (const id of userIds) {
+      if (!emailMap[id]) emailMap[id] = id.slice(0, 8) + "...";
+    }
   }
 
   return {
