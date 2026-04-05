@@ -78,17 +78,19 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
           }}
         >
           {/* Yonsei fills from left, Korea fills from right */}
-          <div className="absolute inset-y-0 left-0 transition-[width] duration-1000 ease-out"
+          <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
             style={{
-              width: animated ? (totalVotes === 0 ? "0%" : `${yonseiPct}%`) : "0%",
+              width: totalVotes === 0 ? "0%" : `${yonseiPct}%`,
               background: "linear-gradient(to right, #1a6dff 0%, #1a6dff 60%, #3a2a6a 100%)",
-              willChange: "width", transform: "translateZ(0)",
+              transformOrigin: "left",
+              transform: animated ? "scaleX(1)" : "scaleX(0)",
             }} />
-          <div className="absolute inset-y-0 right-0 transition-[width] duration-1000 ease-out"
+          <div className="absolute inset-y-0 right-0 transition-transform duration-1000 ease-out"
             style={{
-              width: animated ? (totalVotes === 0 ? "0%" : `${koreaPct}%`) : "0%",
+              width: totalVotes === 0 ? "0%" : `${koreaPct}%`,
               background: "linear-gradient(to left, #e8193e 0%, #e8193e 60%, #6a1a3a 100%)",
-              willChange: "width", transform: "translateZ(0)",
+              transformOrigin: "right",
+              transform: animated ? "scaleX(1)" : "scaleX(0)",
             }} />
           {/* Top convex highlight */}
           <div

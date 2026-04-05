@@ -111,17 +111,19 @@ function MiniVoteBar({ entries }: { entries: PhotoEntry[] }) {
       <div className="relative h-7 rounded-full overflow-hidden bg-[#2a2a2a]"
         style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}
       >
-        <div className="absolute inset-y-0 left-0 transition-[width] duration-1000 ease-out"
+        <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
           style={{
-            width: animated ? (total === 0 ? "0%" : `${kPct}%`) : "0%",
+            width: total === 0 ? "0%" : `${kPct}%`,
             background: "linear-gradient(to right, #e8193e 0%, #e8193e 60%, #6a1a3a 100%)",
-            willChange: "width", transform: "translateZ(0)",
+            transformOrigin: "left",
+            transform: animated ? "scaleX(1)" : "scaleX(0)",
           }} />
-        <div className="absolute inset-y-0 right-0 transition-[width] duration-1000 ease-out"
+        <div className="absolute inset-y-0 right-0 transition-transform duration-1000 ease-out"
           style={{
-            width: animated ? (total === 0 ? "0%" : `${yPct}%`) : "0%",
+            width: total === 0 ? "0%" : `${yPct}%`,
             background: "linear-gradient(to left, #1a6dff 0%, #1a6dff 60%, #3a2a6a 100%)",
-            willChange: "width", transform: "translateZ(0)",
+            transformOrigin: "right",
+            transform: animated ? "scaleX(1)" : "scaleX(0)",
           }} />
         <div className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)" }} />
         <div className="absolute inset-0 flex items-center justify-between px-3">
