@@ -19,6 +19,7 @@ interface PhotoModalProps {
 export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during", votingPeriod }: PhotoModalProps) {
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [showInfoTeaser, setShowInfoTeaser] = useState(false);
   const [visible, setVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -27,6 +28,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
       setVotePulse(false);
       setClosing(false);
       setImageLoaded(false);
+      setShowInfoTeaser(false);
       requestAnimationFrame(() => setVisible(true));
     } else {
       setVisible(false);
@@ -118,6 +120,17 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
             draggable={false}
             onLoad={() => setImageLoaded(true)}
           />
+          {/* Share icon on photo */}
+          <button
+            onClick={handleShare}
+            className="absolute bottom-3 right-6 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all cursor-pointer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          </button>
         </div>
 
         {/* Info */}
@@ -158,20 +171,42 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
             </span>
           </button>
 
-          {/* Share button */}
+          {/* Info teaser button */}
           <button
-            onClick={handleShare}
+            onClick={() => setShowInfoTeaser(true)}
             className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-black bg-white hover:bg-white/90 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
             </svg>
-            친구에게 이 사진 영업하기
+            이 사진은 어디서 촬영되었을까?
           </button>
         </div>
       </div>
+
+      {showInfoTeaser && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-modal-overlay-in" onClick={() => setShowInfoTeaser(false)}>
+          <div className="bg-card rounded-3xl p-6 max-w-xs w-full text-center border border-white/10 animate-modal-in"
+            style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3 text-muted">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4" />
+              <path d="M12 8h.01" />
+            </svg>
+            <h3 className="text-base font-bold mb-1">촬영 장소 및 상세 정보</h3>
+            <p className="text-sm text-muted mb-4">최종 결과 발표 후 공개됩니다. 기대해주세요!</p>
+            <button
+              onClick={() => setShowInfoTeaser(false)}
+              className="w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl cursor-pointer active:scale-[0.97] transition-all"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
