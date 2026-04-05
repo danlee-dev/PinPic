@@ -8,6 +8,15 @@ import { signInWithGoogle, signOut } from "@/lib/auth";
 export function UserButton() {
   const { user, loading } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (showMenu && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+  }, [showMenu]);
 
   if (loading) return null;
 
@@ -30,16 +39,6 @@ export function UserButton() {
 
   const avatar = user.user_metadata?.avatar_url;
   const name = user.user_metadata?.full_name || user.email?.split("@")[0];
-
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
-
-  useEffect(() => {
-    if (showMenu && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-    }
-  }, [showMenu]);
 
   return (
     <div className="relative">
