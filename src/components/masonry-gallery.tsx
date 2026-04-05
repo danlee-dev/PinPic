@@ -145,9 +145,9 @@ export function MasonryGallery() {
               {entries.length > 0 && (() => {
                 const yVotes = entries.filter(e => e.school === "yonsei").reduce((s, e) => s + e.votes, 0);
                 const kVotes = entries.filter(e => e.school === "korea").reduce((s, e) => s + e.votes, 0);
-                const total = yVotes + kVotes || 1;
-                const yPct = Math.round((yVotes / total) * 100);
-                const kPct = 100 - yPct;
+                const total = yVotes + kVotes;
+                const yPct = total === 0 ? 0 : Math.round((yVotes / total) * 100);
+                const kPct = total === 0 ? 0 : 100 - yPct;
                 return (
                   <div className="relative mb-5 mx-auto max-w-[280px]">
                     <div className="flex justify-between mb-1.5 text-[11px] font-bold">

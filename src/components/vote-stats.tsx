@@ -22,10 +22,10 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
 
   const yonseiVotes = yonseiEntries.reduce((sum, e) => sum + e.votes, 0);
   const koreaVotes = koreaEntries.reduce((sum, e) => sum + e.votes, 0);
-  const totalVotes = yonseiVotes + koreaVotes || 1;
+  const totalVotes = yonseiVotes + koreaVotes;
 
-  const yonseiPct = Math.round((yonseiVotes / totalVotes) * 100);
-  const koreaPct = 100 - yonseiPct;
+  const yonseiPct = totalVotes === 0 ? 0 : Math.round((yonseiVotes / totalVotes) * 100);
+  const koreaPct = totalVotes === 0 ? 0 : 100 - yonseiPct;
 
   const yonseiVotedCount = yonseiEntries.filter((e) => votedIds.has(e.id)).length;
   const koreaVotedCount = koreaEntries.filter((e) => votedIds.has(e.id)).length;
