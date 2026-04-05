@@ -252,9 +252,9 @@ export function MasonryGallery() {
                 <div className="absolute inset-0 pointer-events-none" style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", borderRight: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", borderRadius: "0 0 24px 24px" }} />
 
               {/* Mini vote bar - left=Korea, right=Yonsei (matching poster) */}
-              {entries.length > 0 && (() => {
-                const yVotes = entries.filter(e => e.school === "yonsei").reduce((s, e) => s + e.votes, 0);
-                const kVotes = entries.filter(e => e.school === "korea").reduce((s, e) => s + e.votes, 0);
+              {uniqueEntries.length > 0 && (() => {
+                const yVotes = uniqueEntries.filter(e => e.school === "yonsei").reduce((s, e) => s + e.votes, 0);
+                const kVotes = uniqueEntries.filter(e => e.school === "korea").reduce((s, e) => s + e.votes, 0);
                 const total = yVotes + kVotes;
                 const kPct = total === 0 ? 0 : Math.round((kVotes / total) * 100);
                 const yPct = total === 0 ? 0 : 100 - kPct;
@@ -411,12 +411,12 @@ export function MasonryGallery() {
         )}
 
         {activeTab === "stats" && (
-          <VoteStats entries={entries} votedIds={votedIds} onPhotoClick={setSelectedEntry} />
+          <VoteStats entries={uniqueEntries} votedIds={votedIds} onPhotoClick={setSelectedEntry} />
         )}
 
         {activeTab === "voted" && (
           <MyVotes
-            entries={entries}
+            entries={uniqueEntries}
             votedIds={votedIds}
             onPhotoClick={setSelectedEntry}
           />
