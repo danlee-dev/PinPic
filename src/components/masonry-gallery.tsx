@@ -136,7 +136,7 @@ export function MasonryGallery() {
         prev.map((e) => (e.id === id ? { ...e, votes: e.votes - 1 } : e))
       );
     }
-  }, [user]);
+  }, [user, canVote]);
 
   const handleUnvote = useCallback(async (id: string) => {
     // Optimistic update
