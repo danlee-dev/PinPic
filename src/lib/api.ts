@@ -102,3 +102,12 @@ export async function recordPhotoClick(photoId: string): Promise<void> {
     user_id: user?.id || null,
   });
 }
+
+export async function recordPhotoView(photoId: string): Promise<void> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  await supabase.from("photo_views").insert({
+    photo_id: photoId,
+    user_id: user?.id || null,
+  });
+}

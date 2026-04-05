@@ -13,7 +13,8 @@ import {
   fetchAdmins,
   addAdmin,
   removeAdmin,
-  fetchPhotoClicks,
+  fetchEngagementStats,
+  EngagementStats,
 } from "@/lib/admin";
 import { SchoolBadge } from "./school-badge";
 
@@ -33,7 +34,7 @@ export function AdminPanel() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [photoSearch, setPhotoSearch] = useState("");
-  const [clicks, setClicks] = useState<{ photo_id: string; nickname: string; school: string; click_count: number }[]>([]);
+  const [engagement, setEngagement] = useState<EngagementStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -42,15 +43,15 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, adm, cl] = await Promise.all([
+    const [p, all, vp, adm, eng] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
       fetchAdmins(),
-      fetchPhotoClicks(),
+      fetchEngagementStats(),
     ]);
     setPending(p);
-    setClicks(cl);
+    setEngagement(eng);
     setAllPhotos(all);
     setPeriod(vp);
     setAdmins(adm);
@@ -181,7 +182,7 @@ export function AdminPanel() {
         {([
           ["pending", `승인 대기 (${pending.length})`],
           ["photos", "사진 관리"],
-          ["clicks", `관심도 (${clicks.reduce((s, c) => s + c.click_count, 0)})`],
+          ["clicks", `관심도`],
           ["settings", "설정"],
         ] as const).map(([value, label]) => (
           <button
@@ -240,21 +241,61 @@ export function AdminPanel() {
         </div>
       )}
 
-      {tab === "clicks" && (
-        <div className="space-y-3">
-          {clicks.length === 0 ? (
-            <div className="text-center py-12 text-muted text-sm">아직 클릭 기록이 없습니다</div>
-          ) : (
-            clicks.map((c, i) => (
-              <div key={c.photo_id} className="flex items-center gap-3 p-3 bg-surface rounded-2xl border border-border/30">
-                <span className="w-6 text-center text-xs font-bold text-muted">{i + 1}</span>
-                <SchoolBadge school={c.school as "yonsei" | "korea"} />
-                <span className="text-sm font-semibold flex-1 truncate">{c.nickname}</span>
-                <span className="text-sm font-bold">{c.click_count}</span>
-                <span className="text-[10px] text-muted">clicks</span>
+      {tab === "clicks" && engagement && (
+        <div className="space-y-4">
+          {/* 전체 통계 */}
+          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+            <h4 className="text-xs font-semibold text-muted mb-3">전체 통계</h4>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-2xl font-black">{engagement.total.views}</p>
+                <p className="text-[10px] text-muted">사진 조회</p>
               </div>
-            ))
-          )}
+              <div>
+                <p className="text-2xl font-black">{engagement.total.clicks}</p>
+                <p className="text-[10px] text-muted">스팟 클릭</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black">{engagement.total.rate}%</p>
+                <p className="text-[10px] text-muted">전환율</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 사진별 */}
+          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+            <h4 className="text-xs font-semibold text-muted mb-3">사진별</h4>
+            <div className="space-y-2">
+              {engagement.byPhoto.length === 0 ? (
+                <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
+              ) : engagement.byPhoto.map((p) => (
+                <div key={p.photo_id} className="flex items-center gap-2 py-1.5">
+                  <SchoolBadge school={p.school as "yonsei" | "korea"} />
+                  <span className="text-xs font-semibold flex-1 truncate">{p.nickname}</span>
+                  <span className="text-xs text-muted">{p.views}뷰</span>
+                  <span className="text-xs text-muted">{p.clicks}클릭</span>
+                  <span className="text-xs font-bold w-10 text-right">{p.rate}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 사용자별 */}
+          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+            <h4 className="text-xs font-semibold text-muted mb-3">사용자별</h4>
+            <div className="space-y-2">
+              {engagement.byUser.length === 0 ? (
+                <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
+              ) : engagement.byUser.map((u) => (
+                <div key={u.user_id} className="flex items-center gap-2 py-1.5">
+                  <span className="text-xs flex-1 truncate">{u.email}</span>
+                  <span className="text-xs text-muted">{u.views}뷰</span>
+                  <span className="text-xs text-muted">{u.clicks}클릭</span>
+                  <span className="text-xs font-bold w-10 text-right">{u.rate}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

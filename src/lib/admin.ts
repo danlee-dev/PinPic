@@ -127,27 +127,76 @@ export async function removeAdmin(userId: string): Promise<boolean> {
   return !error;
 }
 
-export async function fetchPhotoClicks(): Promise<{ photo_id: string; nickname: string; school: string; click_count: number }[]> {
+export interface EngagementStats {
+  total: { views: number; clicks: number; rate: number };
+  byPhoto: { photo_id: string; nickname: string; school: string; views: number; clicks: number; rate: number }[];
+  byUser: { user_id: string; email: string; views: number; clicks: number; rate: number }[];
+}
+
+export async function fetchEngagementStats(): Promise<EngagementStats> {
   const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("photo_clicks")
-    .select("photo_id, photos(nickname, school)")
-    .order("created_at", { ascending: false });
 
-  if (error || !data) return [];
+  // Get admin user IDs to exclude
+  const { data: adminData } = await supabase.from("admins").select("user_id");
+  const adminIds = new Set((adminData || []).map((a: any) => a.user_id));
 
-  const counts: Record<string, { nickname: string; school: string; count: number }> = {};
-  for (const row of data as any[]) {
-    const pid = row.photo_id;
-    if (!counts[pid]) {
-      counts[pid] = { nickname: row.photos?.nickname || "?", school: row.photos?.school || "?", count: 0 };
-    }
-    counts[pid].count++;
+  // Fetch views and clicks
+  const [{ data: views }, { data: clicks }] = await Promise.all([
+    supabase.from("photo_views").select("photo_id, user_id, photos(nickname, school)"),
+    supabase.from("photo_clicks").select("photo_id, user_id, photos(nickname, school)"),
+  ]);
+
+  const safeViews = ((views || []) as any[]).filter(v => !v.user_id || !adminIds.has(v.user_id));
+  const safeClicks = ((clicks || []) as any[]).filter(c => !c.user_id || !adminIds.has(c.user_id));
+
+  // Total
+  const totalViews = safeViews.length;
+  const totalClicks = safeClicks.length;
+
+  // By photo
+  const photoMap: Record<string, { nickname: string; school: string; views: number; clicks: number }> = {};
+  for (const v of safeViews) {
+    const pid = v.photo_id;
+    if (!photoMap[pid]) photoMap[pid] = { nickname: v.photos?.nickname || "?", school: v.photos?.school || "?", views: 0, clicks: 0 };
+    photoMap[pid].views++;
+  }
+  for (const c of safeClicks) {
+    const pid = c.photo_id;
+    if (!photoMap[pid]) photoMap[pid] = { nickname: c.photos?.nickname || "?", school: c.photos?.school || "?", views: 0, clicks: 0 };
+    photoMap[pid].clicks++;
   }
 
-  return Object.entries(counts)
-    .map(([photo_id, v]) => ({ photo_id, nickname: v.nickname, school: v.school, click_count: v.count }))
-    .sort((a, b) => b.click_count - a.click_count);
+  // By user (only logged-in users)
+  const userMap: Record<string, { views: number; clicks: number }> = {};
+  for (const v of safeViews) {
+    if (!v.user_id) continue;
+    if (!userMap[v.user_id]) userMap[v.user_id] = { views: 0, clicks: 0 };
+    userMap[v.user_id].views++;
+  }
+  for (const c of safeClicks) {
+    if (!c.user_id) continue;
+    if (!userMap[c.user_id]) userMap[c.user_id] = { views: 0, clicks: 0 };
+    userMap[c.user_id].clicks++;
+  }
+
+  // Resolve user emails
+  const userIds = Object.keys(userMap);
+  let emailMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: users } = await supabase.from("admins").select("user_id"); // dummy to get auth - we'll use user_id as fallback
+    // Since we can't query auth.users from client, use user_id as identifier
+    emailMap = Object.fromEntries(userIds.map(id => [id, id.slice(0, 8) + "..."]));
+  }
+
+  return {
+    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0 },
+    byPhoto: Object.entries(photoMap)
+      .map(([photo_id, v]) => ({ photo_id, ...v, rate: v.views > 0 ? Math.round((v.clicks / v.views) * 100) : 0 }))
+      .sort((a, b) => b.views - a.views),
+    byUser: Object.entries(userMap)
+      .map(([user_id, v]) => ({ user_id, email: emailMap[user_id] || user_id, ...v, rate: v.views > 0 ? Math.round((v.clicks / v.views) * 100) : 0 }))
+      .sort((a, b) => b.views - a.views),
+  };
 }
 
 export function isVotingOpen(period: VotingPeriod | null): boolean {

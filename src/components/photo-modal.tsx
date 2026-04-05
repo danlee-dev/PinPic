@@ -3,8 +3,9 @@
 import { useEffect, useCallback, useState, useRef } from "react";
 import { PhotoEntry, VotingPeriod } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
+import { useAuth } from "./auth-provider";
 import { trackEvent } from "@/lib/analytics";
-import { recordPhotoClick } from "@/lib/api";
+import { recordPhotoClick, recordPhotoView } from "@/lib/api";
 
 interface PhotoModalProps {
   entry: PhotoEntry | null;
@@ -18,11 +19,19 @@ interface PhotoModalProps {
 }
 
 export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during", votingPeriod }: PhotoModalProps) {
+  const { isAdmin } = useAuth();
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [showInfoTeaser, setShowInfoTeaser] = useState(false);
   const [visible, setVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Record view (non-admin only)
+  useEffect(() => {
+    if (entry && !isAdmin) {
+      recordPhotoView(entry.id);
+    }
+  }, [entry, isAdmin]);
 
   useEffect(() => {
     if (entry) {
@@ -174,7 +183,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
 
           {/* Info teaser button */}
           <button
-            onClick={() => { setShowInfoTeaser(true); recordPhotoClick(entry.id); }}
+            onClick={() => { setShowInfoTeaser(true); if (!isAdmin) recordPhotoClick(entry.id); }}
             className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-black bg-white hover:bg-white/90 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
