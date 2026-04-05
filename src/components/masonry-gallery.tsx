@@ -215,43 +215,6 @@ export function MasonryGallery() {
                 );
               })()}
 
-              <nav className="relative inline-flex gap-1 bg-white/5 backdrop-blur-sm rounded-full p-1" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-                {(["all", "yonsei", "korea"] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer
-                      ${filter === f
-                        ? f === "yonsei"
-                          ? "bg-yonsei/20 text-yonsei shadow-sm animate-filter-switch"
-                          : f === "korea"
-                            ? "bg-korea/20 text-korea shadow-sm animate-filter-switch"
-                            : "bg-white/10 text-foreground shadow-sm animate-filter-switch"
-                        : "text-muted hover:text-foreground"
-                      }`}
-                  >
-                    {f === "all" ? "전체" : f === "yonsei" ? "연세대" : "고려대"}
-                  </button>
-                ))}
-              </nav>
-
-              {/* Sort dropdown */}
-              <div className="relative mt-3 inline-flex">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
-                  className="appearance-none bg-white/5 text-xs text-muted font-medium pl-3 pr-7 py-1.5 rounded-full cursor-pointer outline-none transition-colors hover:text-foreground"
-                  style={{ border: "1px solid rgba(255,255,255,0.08)" }}
-                >
-                  <option value="random">랜덤</option>
-                  <option value="popular">인기순</option>
-                  <option value="latest">최신순</option>
-                </select>
-                <svg className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </div>
-
               {/* Share button */}
               <button
                 onClick={() => {
@@ -279,6 +242,25 @@ export function MasonryGallery() {
                 단톡방에 화력 지원 요청하기
               </button>
             </div>
+
+            {/* Sort dropdown - between hero and feed */}
+            <div className="flex justify-center mb-3">
+              <div className="relative inline-flex">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as "random" | "popular" | "latest")}
+                  className="appearance-none bg-transparent text-[11px] text-muted/60 font-medium pl-2 pr-5 py-1 rounded cursor-pointer outline-none transition-colors hover:text-muted"
+                >
+                  <option value="random">랜덤</option>
+                  <option value="popular">인기순</option>
+                  <option value="latest">최신순</option>
+                </select>
+                <svg className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-muted/40" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+
             <div className="columns-2 sm:columns-3 gap-3">
               {sorted.map((entry, i) => (
                 <PhotoCard
