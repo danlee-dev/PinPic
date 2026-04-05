@@ -23,14 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    getUser().then(async (u) => {
+    Promise.all([getUser(), checkIsAdmin()]).then(([u, admin]) => {
       setUser(u);
-      if (u) {
-        const admin = await checkIsAdmin();
-        setIsAdmin(admin);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(u ? admin : false);
       setLoading(false);
     });
 
