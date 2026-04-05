@@ -87,7 +87,7 @@ export function MasonryGallery() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
-  const [sortBy, setSortBy] = useState<"random" | "popular" | "latest">("random");
+  const [sortBy, setSortBy] = useState<"random" | "latest">("random");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<Tab>("feed");
@@ -211,8 +211,6 @@ export function MasonryGallery() {
       );
     }
     switch (sortBy) {
-      case "popular":
-        return [...base].sort((a, b) => b.votes - a.votes);
       case "latest":
         return base;
       case "random":
@@ -352,7 +350,7 @@ export function MasonryGallery() {
                 onClick={() => setShowSortMenu(!showSortMenu)}
                 className="flex items-center gap-1.5 bg-surface text-xs text-muted font-medium px-3 py-1.5 rounded-lg cursor-pointer border border-border/50 hover:text-foreground transition-colors"
               >
-                {sortBy === "random" ? "랜덤" : sortBy === "popular" ? "인기순" : "최신순"}
+                {filter === "korea" ? "고려대" : filter === "yonsei" ? "연세대" : sortBy === "random" ? "랜덤" : "최신순"}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
@@ -361,12 +359,23 @@ export function MasonryGallery() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
                   <div className="absolute right-0 top-9 z-50 bg-card rounded-xl border border-border/50 shadow-2xl shadow-black/50 py-1 min-w-[100px] animate-card-rise">
-                    {([["random", "랜덤"], ["popular", "인기순"], ["latest", "최신순"]] as const).map(([value, label]) => (
+                    {([["random", "랜덤"], ["latest", "최신순"]] as const).map(([value, label]) => (
                       <button
                         key={value}
-                        onClick={() => { setSortBy(value); setShowSortMenu(false); }}
+                        onClick={() => { setSortBy(value); setFilter("all"); setShowSortMenu(false); }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer
-                          ${sortBy === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
+                          ${filter === "all" && sortBy === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <div className="my-1 border-t border-border/30" />
+                    {([["korea", "고려대"], ["yonsei", "연세대"]] as const).map(([value, label]) => (
+                      <button
+                        key={value}
+                        onClick={() => { setFilter(value); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer
+                          ${filter === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
                       >
                         {label}
                       </button>
