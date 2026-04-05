@@ -262,7 +262,18 @@ export function MasonryGallery() {
             <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl"
             >
               {/* Poster banner */}
-              <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
+              <div className="relative">
+                <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
+                {votingStatus !== "during" && !isAdmin && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-black/70 backdrop-blur-sm text-white text-xs font-semibold px-5 py-2.5 rounded-full border border-white/20 shadow-lg">
+                      {votingStatus === "before"
+                        ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
+                        : "투표가 종료되었습니다"}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Vote bar + share area */}
               <div className="relative px-5 pt-4 pb-5"
@@ -342,17 +353,6 @@ export function MasonryGallery() {
               </button>
               </div>
             </div>
-
-            {/* Voting period notice */}
-            {votingStatus !== "during" && !isAdmin && (
-              <div className="mb-3 px-1">
-                <div className="text-center text-xs text-muted py-2 px-4 rounded-xl bg-surface border border-border/30">
-                  {votingStatus === "before"
-                    ? `투표는 ${formatKST(votingPeriod?.start)}부터 시작됩니다`
-                    : "투표가 종료되었습니다"}
-                </div>
-              </div>
-            )}
 
             {/* Search + Sort row */}
             <div className="flex items-center gap-2 mb-3 px-1">
