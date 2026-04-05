@@ -320,12 +320,12 @@ export function MasonryGallery() {
                 const yPct = total === 0 ? 0 : 100 - kPct;
                 return (
                   <div className="relative mb-5 mx-auto max-w-[300px]">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="relative flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-1.5">
                         <img src="/korea-logo.png" alt="고려대" className="w-4 h-4 object-contain" />
                         <span className={`text-[11px] font-bold ${kPct === 0 ? "text-muted" : "text-korea"}`}>{kPct}%</span>
                       </div>
-                      <span className="text-muted text-[10px]">{total.toLocaleString()}표</span>
+                      <span className="absolute left-1/2 -translate-x-1/2 text-muted text-[10px]">{total.toLocaleString()}표</span>
                       <div className="flex items-center gap-1.5">
                         <span className={`text-[11px] font-bold ${yPct === 0 ? "text-muted" : "text-yonsei"}`}>{yPct}%</span>
                         <img src="/yonsei-logo.png" alt="연세대" className="w-4 h-4 rounded-full object-cover" />
