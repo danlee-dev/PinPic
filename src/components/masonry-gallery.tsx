@@ -347,12 +347,10 @@ export function MasonryGallery() {
             <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl"
             >
               {/* Poster banner */}
-              <div className="relative">
-                <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-                  <div className="bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-4 py-1.5 rounded-full border border-white/15">
-                    결과 발표 4월 8일
-                  </div>
+              <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
+              <div className="flex justify-center -mt-5 mb-2 relative z-10">
+                <div className="bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-4 py-1.5 rounded-full border border-white/15">
+                  결과 발표 4월 8일
                 </div>
               </div>
 
