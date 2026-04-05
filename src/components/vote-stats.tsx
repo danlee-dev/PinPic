@@ -49,16 +49,22 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
         {/* Battle stats */}
         <div className="relative">
           <div className="flex items-end justify-between mb-3">
-            <div className="text-left">
-              <p className={`text-xs font-semibold uppercase tracking-wider ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>연세대</p>
-              <p className={`text-3xl font-black leading-none ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>{yonseiPct}%</p>
+            <div className="text-left flex items-center gap-2">
+              <img src="/yonsei-logo.png" alt="연세대" className="w-8 h-8 rounded-full object-cover" />
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>연세대</p>
+                <p className={`text-3xl font-black leading-none ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>{yonseiPct}%</p>
+              </div>
             </div>
             <div className="text-xs text-muted font-medium px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
               총 {totalVotes.toLocaleString()}표
             </div>
-            <div className="text-right">
-              <p className={`text-xs font-semibold uppercase tracking-wider ${koreaPct === 0 ? "text-muted" : "text-korea"}`}>고려대</p>
-              <p className={`text-3xl font-black leading-none ${koreaPct === 0 ? "text-muted" : "text-korea"}`}>{koreaPct}%</p>
+            <div className="text-right flex items-center gap-2">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider ${koreaPct === 0 ? "text-muted" : "text-korea"}`}>고려대</p>
+                <p className={`text-3xl font-black leading-none ${koreaPct === 0 ? "text-muted" : "text-korea"}`}>{koreaPct}%</p>
+              </div>
+              <img src="/korea-logo.png" alt="고려대" className="w-8 h-8 object-contain" />
             </div>
           </div>
 
