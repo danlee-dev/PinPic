@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PhotoEntry } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
-import { getThumbUrl } from "@/lib/image";
 
 interface PhotoCardProps {
   entry: PhotoEntry;
@@ -43,12 +42,12 @@ export function PhotoCard({ entry, index, voted, onClick }: PhotoCardProps) {
       style={{ animationDelay: visible ? `${stagger}s` : undefined }}
       onClick={() => onClick(entry)}
     >
-      <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">
+      <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30 max-h-[400px]">
         {!imageLoaded && (
           <div className="w-full skeleton-shimmer rounded-2xl" style={{ paddingBottom: "125%" }} />
         )}
         <img
-          src={getThumbUrl(entry.image_url, 400)}
+          src={entry.image_url}
           alt={entry.nickname}
           className={`w-full block transition-transform duration-500 ease-out group-hover:scale-[1.05]
             ${imageLoaded ? "animate-image-reveal" : "opacity-0"}`}
