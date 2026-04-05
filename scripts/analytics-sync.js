@@ -83,10 +83,13 @@ function syncAnalytics() {
     userStats[c.user_id].clicks++;
   });
 
+  // Resolve emails
+  var emailMap = fetchUserEmails(Object.keys(userStats));
+
   var userRows = Object.keys(userStats).map(function(uid) {
     var s = userStats[uid];
     var r = s.views > 0 ? Math.round((s.clicks / s.views) * 100) + "%" : "0%";
-    return [uid.substring(0, 8) + "...", s.views, s.clicks, r];
+    return [emailMap[uid] || uid.substring(0, 8) + "...", s.views, s.clicks, r];
   }).sort(function(a, b) { return b[1] - a[1]; });
 
   if (userRows.length > 0) {
@@ -101,7 +104,7 @@ function syncAnalytics() {
 
   var viewRows = safeViews.map(function(v) {
     var p = photoMap[v.photo_id] || { nickname: "?", school: "?" };
-    return [v.created_at, p.nickname, p.school === "yonsei" ? "연세대" : "고려대", v.user_id ? v.user_id.substring(0, 8) + "..." : "비로그인"];
+    return [v.created_at, p.nickname, p.school === "yonsei" ? "연세대" : "고려대", v.user_id ? (emailMap[v.user_id] || v.user_id.substring(0, 8) + "...") : "비로그인"];
   }).sort(function(a, b) { return a[0] > b[0] ? -1 : 1; });
 
   if (viewRows.length > 0) {
@@ -116,7 +119,7 @@ function syncAnalytics() {
 
   var clickRows = safeClicks.map(function(c) {
     var p = photoMap[c.photo_id] || { nickname: "?", school: "?" };
-    return [c.created_at, p.nickname, p.school === "yonsei" ? "연세대" : "고려대", c.user_id ? c.user_id.substring(0, 8) + "..." : "비로그인"];
+    return [c.created_at, p.nickname, p.school === "yonsei" ? "연세대" : "고려대", c.user_id ? (emailMap[c.user_id] || c.user_id.substring(0, 8) + "...") : "비로그인"];
   }).sort(function(a, b) { return a[0] > b[0] ? -1 : 1; });
 
   if (clickRows.length > 0) {
@@ -141,6 +144,36 @@ function fetchTable(table, select) {
   }
   Logger.log("Fetch 실패 (" + table + "): " + response.getContentText());
   return [];
+}
+
+function fetchUserEmails(userIds) {
+  var emailMap = {};
+  if (userIds.length === 0) return emailMap;
+
+  // Supabase Auth admin API로 유저 목록 조회
+  var url = SUPABASE_URL + "/auth/v1/admin/users?per_page=1000";
+  var response = UrlFetchApp.fetch(url, {
+    method: "get",
+    headers: {
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "apikey": SUPABASE_KEY,
+    },
+    muteHttpExceptions: true,
+  });
+
+  if (response.getResponseCode() === 200) {
+    var data = JSON.parse(response.getContentText());
+    var users = data.users || data;
+    if (Array.isArray(users)) {
+      users.forEach(function(u) {
+        if (userIds.indexOf(u.id) !== -1) {
+          emailMap[u.id] = u.email || u.id.substring(0, 8) + "...";
+        }
+      });
+    }
+  }
+
+  return emailMap;
 }
 
 function getOrCreateSheet(ss, name) {
