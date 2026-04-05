@@ -37,7 +37,14 @@ function onFormSubmit(e) {
     const schoolCode = school.includes("연세") ? "yonsei" : "korea";
     const club = (clubName === "없음" || !clubName) ? null : clubName;
 
-    const fileUrl = getFieldValue(response, "업로드");
+    var fileUrl = null;
+    for (var key in response) {
+      var val = Array.isArray(response[key]) ? response[key][0] : response[key];
+      if (val && val.toString().includes("drive.google.com")) {
+        fileUrl = val;
+        break;
+      }
+    }
     if (!fileUrl) {
       Logger.log("사진 URL이 없어서 스킵");
       return;
