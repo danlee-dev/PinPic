@@ -93,7 +93,17 @@ export function MasonryGallery() {
   const [sortBy, setSortBy] = useState<"random" | "latest">("random");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<Tab>("feed");
+  const [activeTab, setActiveTabState] = useState<Tab>(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "") as Tab;
+      if (["feed", "stats", "voted", "admin"].includes(hash)) return hash;
+    }
+    return "feed";
+  });
+  const setActiveTab = useCallback((tab: Tab) => {
+    setActiveTabState(tab);
+    window.location.hash = tab;
+  }, []);
   const [showLogin, setShowLogin] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
