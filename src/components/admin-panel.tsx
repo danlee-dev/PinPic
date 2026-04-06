@@ -326,15 +326,15 @@ export function AdminPanel() {
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/20 mb-3">
               <div className="text-center">
                 <p className="text-sm font-bold">{engagement.total.uniqueViewers}명</p>
-                <p className="text-[10px] text-muted">본 사람</p>
+                <p className="text-[10px] text-muted leading-tight">사진 열람</p>
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold">{engagement.total.uniqueClickers}명</p>
-                <p className="text-[10px] text-muted">누른 사람</p>
+                <p className="text-[10px] text-muted leading-tight">스팟 클릭</p>
               </div>
               <div className="text-center">
                 <p className="text-sm font-bold">{Math.max(0, engagement.total.uniqueViewers - engagement.total.uniqueClickers)}명</p>
-                <p className="text-[10px] text-muted">안 누른 사람</p>
+                <p className="text-[10px] text-muted leading-tight">스팟 미클릭</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/20">
