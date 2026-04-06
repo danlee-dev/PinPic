@@ -336,19 +336,7 @@ export function MasonryGallery() {
         // (every photo has roughly equal chance of being seen)
         const estimatedImpressions = Math.max(base.length, 10);
 
-        // Median votes-per-hour across all photos (for velocity baseline)
-        const velocities = base.map((e) => {
-          const age = e.created_at
-            ? Math.max((now - new Date(e.created_at).getTime()) / (1000 * 3600), 1)
-            : 168;
-          return e.votes / age;
-        });
-        const sortedVelocities = [...velocities].sort((a, b) => a - b);
-        const medianVelocity = sortedVelocities.length > 0
-          ? sortedVelocities[Math.floor(sortedVelocities.length / 2)]
-          : 1;
-
-        const scores = base.map((entry, idx) => {
+        const scores = base.map((entry) => {
           const votes = entry.votes;
 
           // 1) Wilson Score: statistically fair ranking even with few votes
@@ -367,14 +355,12 @@ export function MasonryGallery() {
           const exploration = 1 / (1 + votes / Math.max(avgVotes, 1));
 
           // 4) Velocity Penalty: suppress abnormally rapid vote spikes
-          // If votes-per-hour is much higher than median, apply diminishing returns
-          const velocity = velocities[idx];
-          const baselineVelocity = Math.max(medianVelocity, 0.5);
-          const velocityRatio = velocity / baselineVelocity;
-          // No penalty up to 3x median, then logarithmic dampening
-          const velocityPenalty = velocityRatio <= 3
+          // Absolute threshold: 20 votes/hour triggers dampening
+          const velocity = votes / ageHours;
+          const VELOCITY_THRESHOLD = 20; // votes per hour
+          const velocityPenalty = velocity <= VELOCITY_THRESHOLD
             ? 1.0
-            : 1.0 / (1 + Math.log2(velocityRatio / 3));
+            : 1.0 / (1 + Math.log2(velocity / VELOCITY_THRESHOLD));
 
           // 5) Random Jitter: small randomness per session for variety
           let s = Math.floor(

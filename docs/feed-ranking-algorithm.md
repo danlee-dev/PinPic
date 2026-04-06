@@ -81,33 +81,32 @@ exploration = 1 / (1 + votes / avg_votes)
 단톡방 공유 등으로 특정 사진에 투표가 급격히 몰리는 어뷰징을 자동 감지하는 역할이다.
 
 ```
-velocity = votes / age_hours              (사진별 시간당 투표 수)
-median_velocity = 전체 사진의 velocity 중앙값  (정상 속도 기준선)
-velocity_ratio = velocity / median_velocity
+velocity = votes / age_hours   (사진별 시간당 투표 수)
+THRESHOLD = 20                 (시간당 20표 이상이면 비정상으로 판단)
 
-velocity_ratio <= 3  ->  penalty = 1.0 (패널티 없음)
-velocity_ratio > 3   ->  penalty = 1 / (1 + log2(velocity_ratio / 3))
+velocity <= 20  ->  penalty = 1.0 (패널티 없음)
+velocity > 20   ->  penalty = 1 / (1 + log2(velocity / 20))
 ```
 
 동작 방식:
 
-- 전체 사진의 투표 속도 중앙값을 기준선으로 설정
-- 기준선의 3배 이내: 정상 범위로 판단, 패널티 없음
-- 기준선의 3배 초과: 로그 스케일로 점수 감쇠
+- 시간당 투표 수(velocity)를 계산: 총 투표 수 / 업로드 후 경과 시간
+- 시간당 20표 이내: 정상 범위, 패널티 없음
+- 시간당 20표 초과: 로그 스케일로 점수 감쇠 시작
 
-예시 (중앙값 = 시간당 1표 기준):
+예시:
 
-- 시간당 2표: ratio 2 -> penalty 1.0 (정상)
-- 시간당 3표: ratio 3 -> penalty 1.0 (경계, 아직 정상)
-- 시간당 6표: ratio 6 -> penalty 0.5 (점수 50% 감소)
-- 시간당 12표: ratio 12 -> penalty 0.34 (점수 66% 감소)
-- 시간당 24표: ratio 24 -> penalty 0.25 (점수 75% 감소)
+- 시간당 10표: penalty 1.0 (정상)
+- 시간당 20표: penalty 1.0 (경계, 아직 정상)
+- 시간당 40표: penalty 0.5 (점수 50% 감소)
+- 시간당 80표: penalty 0.33 (점수 67% 감소)
+- 시간당 160표: penalty 0.25 (점수 75% 감소)
 
 특징:
 
-- 중앙값 기반이므로 플랫폼 전체 투표량이 늘어도 자동 조정됨
+- 절대 임계값(20표/시간) 기반으로, 현재 플랫폼 규모(상위 좋아요 20~30개)에 맞춤
 - 로그 스케일 감쇠이므로 인기 사진이 완전히 매장되지는 않음
-- 3배 임계값으로 자연스러운 인기와 어뷰징을 구분
+- 시간이 지나면 velocity가 자연스럽게 낮아져 패널티 자동 해제
 
 ### 5. Random Jitter (변동 범위: 0.85 ~ 1.15)
 
@@ -175,13 +174,13 @@ jitter = 0.85 + xorshift(seed) * 0.3
 - Velocity Penalty: 1.0 (시간당 ~2.5표, 3배 이내)
 - 결과: 모든 요소가 균형 -> 상위~중위에 위치
 
-### Case 5: 좋아요 20개, 업로드 2시간 경과, 단톡방 홍보 의심
+### Case 5: 좋아요 25개, 업로드 1시간 경과, 단톡방 홍보 의심
 
 - Wilson Score: 중간~높음
-- Time Decay: 0.9 (매우 최근)
+- Time Decay: 0.94 (매우 최근)
 - Exploration: 낮음
-- Velocity Penalty: ~0.4 (시간당 10표, 중앙값 대비 급등)
-- 결과: 높은 Wilson에도 불구하고 Velocity Penalty가 전체 점수를 60% 감소시켜 중위권으로 하락. 시간이 지나면서 velocity가 정상화되면 자연스럽게 복귀
+- Velocity: 시간당 25표 -> penalty = 1 / (1 + log2(25/20)) = 약 0.74
+- 결과: Velocity Penalty가 전체 점수를 26% 감소시켜 상위권에서 밀려남. 6시간 후 velocity가 시간당 4표로 떨어지면 패널티 해제되어 정상 복귀
 
 ## 구현 위치
 
