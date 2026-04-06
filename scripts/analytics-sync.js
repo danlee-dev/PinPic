@@ -130,20 +130,35 @@ function syncAnalytics() {
 }
 
 function fetchTable(table, select) {
-  var url = SUPABASE_URL + "/rest/v1/" + table + "?select=" + select;
-  var response = UrlFetchApp.fetch(url, {
-    method: "get",
-    headers: {
-      "Authorization": "Bearer " + SUPABASE_KEY,
-      "apikey": SUPABASE_KEY,
-    },
-    muteHttpExceptions: true,
-  });
-  if (response.getResponseCode() === 200) {
-    return JSON.parse(response.getContentText());
+  var allRows = [];
+  var pageSize = 1000;
+  var offset = 0;
+
+  while (true) {
+    var url = SUPABASE_URL + "/rest/v1/" + table + "?select=" + select
+      + "&limit=" + pageSize + "&offset=" + offset;
+    var response = UrlFetchApp.fetch(url, {
+      method: "get",
+      headers: {
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "apikey": SUPABASE_KEY,
+      },
+      muteHttpExceptions: true,
+    });
+
+    if (response.getResponseCode() !== 200) {
+      Logger.log("Fetch 실패 (" + table + "): " + response.getContentText());
+      break;
+    }
+
+    var rows = JSON.parse(response.getContentText());
+    allRows = allRows.concat(rows);
+
+    if (rows.length < pageSize) break;
+    offset += pageSize;
   }
-  Logger.log("Fetch 실패 (" + table + "): " + response.getContentText());
-  return [];
+
+  return allRows;
 }
 
 function fetchUserEmails(userIds) {
