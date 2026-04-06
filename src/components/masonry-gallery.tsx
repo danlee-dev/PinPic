@@ -355,12 +355,15 @@ export function MasonryGallery() {
           const exploration = 1 / (1 + votes / Math.max(avgVotes, 1));
 
           // 4) Velocity Penalty: suppress abnormally rapid vote spikes
-          // Absolute threshold: 20 votes/hour triggers dampening
+          // Two-tier threshold: mild penalty at 10/hr, heavy at 20/hr
           const velocity = votes / ageHours;
-          const VELOCITY_THRESHOLD = 20; // votes per hour
-          const velocityPenalty = velocity <= VELOCITY_THRESHOLD
-            ? 1.0
-            : 1.0 / (1 + Math.log2(velocity / VELOCITY_THRESHOLD));
+          let velocityPenalty = 1.0;
+          if (velocity > 20) {
+            velocityPenalty = 0.5 / (1 + Math.log2(velocity / 20));
+          } else if (velocity > 10) {
+            // Linear interpolation: 1.0 at 10/hr -> 0.5 at 20/hr
+            velocityPenalty = 1.0 - 0.5 * ((velocity - 10) / 10);
+          }
 
           // 5) Random Jitter: small randomness per session for variety
           let s = Math.floor(
