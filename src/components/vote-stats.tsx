@@ -244,6 +244,9 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
                       <p className={`text-[10px] font-semibold ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
                         {entry.school === "yonsei" ? "연세대" : "고려대"}
                       </p>
+                      {entry.location && (
+                        <p className="text-[9px] text-muted/60 truncate">{entry.location}</p>
+                      )}
                     </div>
                     <div className="text-right">
                       <p className="text-base font-bold">{entry.votes}</p>
