@@ -320,11 +320,9 @@ export function MasonryGallery() {
         const avgVotes = base.length > 0 ? totalVotes / base.length : 0;
 
         // Wilson Score Lower Bound (95% confidence)
-        // Treats each photo as: "voted" = success, "seen but not voted" = trial
-        // For simplicity, estimate impressions from relative position
         const wilsonLower = (votes: number, n: number) => {
           if (n === 0) return 0;
-          const z = 1.96; // 95% confidence
+          const z = 1.96;
           const p = votes / n;
           const denominator = 1 + (z * z) / n;
           const center = p + (z * z) / (2 * n);
@@ -332,48 +330,53 @@ export function MasonryGallery() {
           return (center - spread) / denominator;
         };
 
-        // Estimate impressions: use total entries as proxy
-        // (every photo has roughly equal chance of being seen)
         const estimatedImpressions = Math.max(base.length, 10);
 
         const scores = base.map((entry) => {
           const votes = entry.votes;
 
-          // 1) Wilson Score: statistically fair ranking even with few votes
+          // 1) Wilson Score
           const wilson = wilsonLower(votes, estimatedImpressions);
 
-          // 2) Time Decay: boost newer photos (half-life = 12 hours)
+          // 2) Time Decay (half-life = 12 hours)
           const ageMs = entry.created_at
             ? now - new Date(entry.created_at).getTime()
-            : 7 * 24 * 3600 * 1000; // fallback: 7 days old
+            : 7 * 24 * 3600 * 1000;
           const ageHours = Math.max(ageMs / (1000 * 3600), 1);
           const halfLife = 12;
           const timeBoost = Math.pow(2, -ageHours / halfLife);
 
-          // 3) Exploration Bonus: inversely proportional to votes
-          // Photos with fewer votes get higher bonus -> ensures discovery
-          const exploration = 1 / (1 + votes / Math.max(avgVotes, 1));
+          // 3) Exploration Bonus with quality gate
+          // Raw exploration: high for low-vote photos
+          const rawExploration = 1 / (1 + votes / Math.max(avgVotes, 1));
+          // Quality gate: photos below 30% of average votes get dampened exploration
+          // Prevents persistently low-quality photos from hogging top spots
+          const qualityThreshold = avgVotes * 0.3;
+          const qualityGate = votes >= qualityThreshold || ageHours < 6
+            ? 1.0
+            : 0.3 + 0.7 * (votes / Math.max(qualityThreshold, 1));
+          const exploration = rawExploration * qualityGate;
 
-          // 4) Velocity Penalty: suppress abnormally rapid vote spikes
-          // Two-tier threshold: mild penalty at 10/hr, heavy at 20/hr
+          // 4) Velocity Penalty: two-tier (mild at 10/hr, heavy at 20/hr)
           const velocity = votes / ageHours;
           let velocityPenalty = 1.0;
           if (velocity > 20) {
             velocityPenalty = 0.5 / (1 + Math.log2(velocity / 20));
           } else if (velocity > 10) {
-            // Linear interpolation: 1.0 at 10/hr -> 0.5 at 20/hr
             velocityPenalty = 1.0 - 0.5 * ((velocity - 10) / 10);
           }
 
-          // 5) Random Jitter: small randomness per session for variety
+          // 5) Personalization: demote already-voted photos
+          const votedDemote = votedIds.has(entry.id) ? 0.4 : 1.0;
+
+          // 6) Random Jitter per session
           let s = Math.floor(
             (shuffleSeedRef.current * 2147483647 + entry.id.charCodeAt(0) * 31 + entry.id.charCodeAt(1) * 17) % 2147483647
           ) | 1;
           s ^= s << 13; s ^= s >> 17; s ^= s << 5;
-          const jitter = 0.85 + ((s >>> 0) / 4294967296) * 0.3; // 0.85 ~ 1.15
+          const jitter = 0.85 + ((s >>> 0) / 4294967296) * 0.3;
 
-          // Combined score with weighted factors
-          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * velocityPenalty * jitter;
+          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * velocityPenalty * votedDemote * jitter;
 
           return { entry, score };
         });
@@ -396,7 +399,7 @@ export function MasonryGallery() {
         return arr;
       }
     }
-  }, [uniqueEntries, filter, sortBy, searchQuery]);
+  }, [uniqueEntries, filter, sortBy, searchQuery, votedIds]);
 
   return (
     <>
