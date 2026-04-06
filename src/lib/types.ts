@@ -11,6 +11,7 @@ export interface PhotoEntry {
   aspect_ratio: number;
   votes: number;
   status?: PhotoStatus;
+  location?: string;
 }
 
 export interface PhotoRow {

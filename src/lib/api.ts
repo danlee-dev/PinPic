@@ -15,6 +15,7 @@ function toPhotoEntry(row: PhotoWithVotesRow): PhotoEntry {
     school: row.school,
     aspect_ratio: row.aspect_ratio,
     votes: row.votes,
+    location: (row as any).location ?? undefined,
   };
 }
 

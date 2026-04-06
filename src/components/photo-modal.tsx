@@ -240,6 +240,9 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               {entry.club && (
                 <p className="text-sm text-muted mt-0.5">{entry.club}</p>
               )}
+              {isAdmin && entry.location && (
+                <p className="text-xs text-muted/70 mt-0.5">{entry.location}</p>
+              )}
             </div>
             {voted && (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="#ff2d55">

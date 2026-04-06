@@ -36,6 +36,7 @@ function onFormSubmit(e) {
 
     const schoolCode = school.includes("연세") ? "yonsei" : "korea";
     const club = (clubName === "없음" || !clubName) ? null : clubName;
+    const location = getFieldValue(response, "어디서 촬영");
 
     var fileUrl = null;
     for (var key in response) {
@@ -109,6 +110,7 @@ function onFormSubmit(e) {
       club: club,
       school: schoolCode,
       aspect_ratio: aspectRatio,
+      location: location || null,
     };
     if (thumbUrl) {
       photoData.thumb_url = thumbUrl;

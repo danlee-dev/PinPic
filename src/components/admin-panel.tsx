@@ -43,7 +43,7 @@ export function AdminPanel() {
   const [userSortOpen, setUserSortOpen] = useState(false);
   const [engPhotoSearch, setEngPhotoSearch] = useState("");
   const [engUserSearch, setEngUserSearch] = useState("");
-  const [photoModal, setPhotoModal] = useState<{ nickname: string; image_url: string; thumb_url: string | null } | null>(null);
+  const [photoModal, setPhotoModal] = useState<{ nickname: string; image_url: string; thumb_url: string | null; location: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -286,6 +286,9 @@ export function AdminPanel() {
               className="w-full rounded-2xl object-contain max-h-[70vh]"
             />
             <p className="text-center text-sm font-semibold mt-3">{photoModal.nickname}</p>
+            {photoModal.location && (
+              <p className="text-center text-xs text-muted mt-1">{photoModal.location}</p>
+            )}
           </div>
         </div>
       )}
@@ -389,7 +392,7 @@ export function AdminPanel() {
               {filteredPhotos.length === 0 ? (
                 <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
               ) : filteredPhotos.slice(photoPage * 10, photoPage * 10 + 10).map((p) => (
-                <div key={p.photo_id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-white/5 rounded-lg px-1 -mx-1 transition-colors" onClick={() => setPhotoModal({ nickname: p.nickname, image_url: p.image_url, thumb_url: p.thumb_url })}>
+                <div key={p.photo_id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-white/5 rounded-lg px-1 -mx-1 transition-colors" onClick={() => setPhotoModal({ nickname: p.nickname, image_url: p.image_url, thumb_url: p.thumb_url, location: p.location })}>
                   <SchoolBadge school={p.school as "yonsei" | "korea"} />
                   <span className="text-xs font-semibold flex-1 truncate">{p.nickname}</span>
                   <span className="text-[10px] text-muted">{p.unique_viewers}명/{p.unique_clickers}명</span>
