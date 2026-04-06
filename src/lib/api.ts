@@ -104,7 +104,13 @@ export async function recordPhotoClick(photoId: string): Promise<void> {
   });
 }
 
+const viewedPhotos = new Set<string>();
+
 export async function recordPhotoView(photoId: string): Promise<void> {
+  // Deduplicate within session
+  if (viewedPhotos.has(photoId)) return;
+  viewedPhotos.add(photoId);
+
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   await supabase.from("photo_views").insert({
