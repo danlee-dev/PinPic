@@ -12,6 +12,7 @@ export interface PhotoEntry {
   votes: number;
   status?: PhotoStatus;
   location?: string;
+  created_at?: string;
 }
 
 export interface PhotoRow {

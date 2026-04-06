@@ -143,7 +143,7 @@ export function MasonryGallery() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
-  const [sortBy, setSortBy] = useState<"random" | "latest">("random");
+  const [sortBy, setSortBy] = useState<"recommended" | "random" | "latest">("recommended");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTabState] = useState<Tab>("feed");
@@ -314,6 +314,62 @@ export function MasonryGallery() {
     switch (sortBy) {
       case "latest":
         return base;
+      case "recommended": {
+        const now = Date.now();
+        const totalVotes = base.reduce((s, e) => s + e.votes, 0);
+        const avgVotes = base.length > 0 ? totalVotes / base.length : 0;
+
+        // Wilson Score Lower Bound (95% confidence)
+        // Treats each photo as: "voted" = success, "seen but not voted" = trial
+        // For simplicity, estimate impressions from relative position
+        const wilsonLower = (votes: number, n: number) => {
+          if (n === 0) return 0;
+          const z = 1.96; // 95% confidence
+          const p = votes / n;
+          const denominator = 1 + (z * z) / n;
+          const center = p + (z * z) / (2 * n);
+          const spread = z * Math.sqrt((p * (1 - p) + (z * z) / (4 * n)) / n);
+          return (center - spread) / denominator;
+        };
+
+        // Estimate impressions: use total entries as proxy
+        // (every photo has roughly equal chance of being seen)
+        const estimatedImpressions = Math.max(base.length, 10);
+
+        const scores = base.map((entry) => {
+          const votes = entry.votes;
+
+          // 1) Wilson Score: statistically fair ranking even with few votes
+          const wilson = wilsonLower(votes, estimatedImpressions);
+
+          // 2) Time Decay: boost newer photos (half-life = 12 hours)
+          const ageMs = entry.created_at
+            ? now - new Date(entry.created_at).getTime()
+            : 7 * 24 * 3600 * 1000; // fallback: 7 days old
+          const ageHours = ageMs / (1000 * 3600);
+          const halfLife = 12;
+          const timeBoost = Math.pow(2, -ageHours / halfLife);
+
+          // 3) Exploration Bonus: inversely proportional to votes
+          // Photos with fewer votes get higher bonus -> ensures discovery
+          const exploration = 1 / (1 + votes / Math.max(avgVotes, 1));
+
+          // 4) Random Jitter: small randomness per session for variety
+          let s = Math.floor(
+            (shuffleSeedRef.current * 2147483647 + entry.id.charCodeAt(0) * 31 + entry.id.charCodeAt(1) * 17) % 2147483647
+          ) | 1;
+          s ^= s << 13; s ^= s >> 17; s ^= s << 5;
+          const jitter = 0.85 + ((s >>> 0) / 4294967296) * 0.3; // 0.85 ~ 1.15
+
+          // Combined score with weighted factors
+          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * jitter;
+
+          return { entry, score };
+        });
+
+        scores.sort((a, b) => b.score - a.score);
+        return scores.map((s) => s.entry);
+      }
       case "random":
       default: {
         const arr = [...base];
@@ -436,7 +492,7 @@ export function MasonryGallery() {
                 className="flex items-center gap-1.5 text-xs text-muted font-medium px-3 h-9 rounded-xl cursor-pointer hover:text-foreground transition-colors bg-surface border border-white/8"
                 style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
               >
-                {filter === "korea" ? "고려대" : filter === "yonsei" ? "연세대" : sortBy === "random" ? "랜덤" : "최신순"}
+                {filter === "korea" ? "고려대" : filter === "yonsei" ? "연세대" : sortBy === "recommended" ? "추천" : sortBy === "random" ? "랜덤" : "최신순"}
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
@@ -451,7 +507,7 @@ export function MasonryGallery() {
                       boxShadow: "0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
                     }}
                   >
-                    {([["random", "랜덤"], ["latest", "최신순"]] as const).map(([value, label]) => (
+                    {([["recommended", "추천"], ["random", "랜덤"], ["latest", "최신순"]] as const).map(([value, label]) => (
                       <button
                         key={value}
                         onClick={() => { setSortBy(value); setFilter("all"); setShowSortMenu(false); }}

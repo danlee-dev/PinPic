@@ -16,6 +16,7 @@ function toPhotoEntry(row: PhotoWithVotesRow): PhotoEntry {
     aspect_ratio: row.aspect_ratio,
     votes: row.votes,
     location: (row as any).location ?? undefined,
+    created_at: row.created_at,
   };
 }
 
