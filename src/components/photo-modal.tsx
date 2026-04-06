@@ -23,6 +23,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [showInfoTeaser, setShowInfoTeaser] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [visible, setVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -195,17 +196,39 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
             draggable={false}
             onLoad={() => setImageLoaded(true)}
           />
-          {/* Share icon on photo */}
-          <button
-            onClick={handleShare}
-            className="absolute bottom-3 right-6 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all cursor-pointer"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-          </button>
+          {/* Photo action icons */}
+          <div className="absolute bottom-3 right-6 flex gap-2">
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/photo/${entry.id}`;
+                navigator.clipboard.writeText(url);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all cursor-pointer"
+            >
+              {linkCopied ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+                  <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 active:scale-90 transition-all cursor-pointer"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Info */}
