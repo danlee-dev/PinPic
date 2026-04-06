@@ -272,20 +272,20 @@ export function AdminPanel() {
 
       {/* Photo modal */}
       {photoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setPhotoModal(null)}>
-          <div className="relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-modal-overlay-in" onClick={() => setPhotoModal(null)}>
+          <div className="relative max-w-md w-full animate-modal-in" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setPhotoModal(null)}
+              className="absolute top-3 right-3 z-10 w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
             <img
-              src={photoModal.image_url}
+              src={photoModal.thumb_url || photoModal.image_url}
               alt={photoModal.nickname}
               className="w-full rounded-2xl object-contain max-h-[70vh]"
             />
             <p className="text-center text-sm font-semibold mt-3">{photoModal.nickname}</p>
-            <button
-              onClick={() => setPhotoModal(null)}
-              className="absolute -top-3 -right-3 w-8 h-8 bg-surface rounded-full flex items-center justify-center border border-border/50 text-muted hover:text-foreground cursor-pointer"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            </button>
           </div>
         </div>
       )}
