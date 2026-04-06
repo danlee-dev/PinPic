@@ -336,7 +336,19 @@ export function MasonryGallery() {
         // (every photo has roughly equal chance of being seen)
         const estimatedImpressions = Math.max(base.length, 10);
 
-        const scores = base.map((entry) => {
+        // Median votes-per-hour across all photos (for velocity baseline)
+        const velocities = base.map((e) => {
+          const age = e.created_at
+            ? Math.max((now - new Date(e.created_at).getTime()) / (1000 * 3600), 1)
+            : 168;
+          return e.votes / age;
+        });
+        const sortedVelocities = [...velocities].sort((a, b) => a - b);
+        const medianVelocity = sortedVelocities.length > 0
+          ? sortedVelocities[Math.floor(sortedVelocities.length / 2)]
+          : 1;
+
+        const scores = base.map((entry, idx) => {
           const votes = entry.votes;
 
           // 1) Wilson Score: statistically fair ranking even with few votes
@@ -346,7 +358,7 @@ export function MasonryGallery() {
           const ageMs = entry.created_at
             ? now - new Date(entry.created_at).getTime()
             : 7 * 24 * 3600 * 1000; // fallback: 7 days old
-          const ageHours = ageMs / (1000 * 3600);
+          const ageHours = Math.max(ageMs / (1000 * 3600), 1);
           const halfLife = 12;
           const timeBoost = Math.pow(2, -ageHours / halfLife);
 
@@ -354,7 +366,17 @@ export function MasonryGallery() {
           // Photos with fewer votes get higher bonus -> ensures discovery
           const exploration = 1 / (1 + votes / Math.max(avgVotes, 1));
 
-          // 4) Random Jitter: small randomness per session for variety
+          // 4) Velocity Penalty: suppress abnormally rapid vote spikes
+          // If votes-per-hour is much higher than median, apply diminishing returns
+          const velocity = velocities[idx];
+          const baselineVelocity = Math.max(medianVelocity, 0.5);
+          const velocityRatio = velocity / baselineVelocity;
+          // No penalty up to 3x median, then logarithmic dampening
+          const velocityPenalty = velocityRatio <= 3
+            ? 1.0
+            : 1.0 / (1 + Math.log2(velocityRatio / 3));
+
+          // 5) Random Jitter: small randomness per session for variety
           let s = Math.floor(
             (shuffleSeedRef.current * 2147483647 + entry.id.charCodeAt(0) * 31 + entry.id.charCodeAt(1) * 17) % 2147483647
           ) | 1;
@@ -362,7 +384,7 @@ export function MasonryGallery() {
           const jitter = 0.85 + ((s >>> 0) / 4294967296) * 0.3; // 0.85 ~ 1.15
 
           // Combined score with weighted factors
-          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * jitter;
+          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * velocityPenalty * jitter;
 
           return { entry, score };
         });
