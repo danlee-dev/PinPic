@@ -14,14 +14,20 @@ export async function POST(req: NextRequest) {
   if (!userIds || !Array.isArray(userIds)) return NextResponse.json({ error: "Missing userIds" }, { status: 400 });
 
   const service = createServiceClient();
-  const { data: { users }, error } = await service.auth.admin.listUsers();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
   const emailMap: Record<string, string> = {};
-  for (const u of users) {
-    if (userIds.includes(u.id)) {
-      emailMap[u.id] = u.email || u.id.slice(0, 8) + "...";
+  let page = 1;
+  const perPage = 1000;
+
+  while (true) {
+    const { data: { users }, error } = await service.auth.admin.listUsers({ page, perPage });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    for (const u of users) {
+      if (userIds.includes(u.id)) {
+        emailMap[u.id] = u.email || u.id.slice(0, 8) + "...";
+      }
     }
+    if (users.length < perPage || Object.keys(emailMap).length === userIds.length) break;
+    page++;
   }
 
   return NextResponse.json(emailMap);
