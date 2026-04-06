@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PhotoWithVotesRow, AdminUser, VotingPeriod } from "@/lib/types";
 import {
   fetchPendingPhotos,
@@ -37,6 +37,13 @@ export function AdminPanel() {
   const [engagement, setEngagement] = useState<EngagementStats | null>(null);
   const [photoPage, setPhotoPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
+  const [photoSort, setPhotoSort] = useState<"views" | "rate">("views");
+  const [userSort, setUserSort] = useState<"views" | "rate">("views");
+  const [photoSortOpen, setPhotoSortOpen] = useState(false);
+  const [userSortOpen, setUserSortOpen] = useState(false);
+  const [engPhotoSearch, setEngPhotoSearch] = useState("");
+  const [engUserSearch, setEngUserSearch] = useState("");
+  const [photoModal, setPhotoModal] = useState<{ nickname: string; image_url: string; thumb_url: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
@@ -130,6 +137,26 @@ export function AdminPanel() {
     setAdmins((prev) => prev.filter((a) => a.user_id !== userId));
     showMessage("관리자 제거 완료");
   };
+
+  const filteredPhotos = useMemo(() => {
+    if (!engagement) return [];
+    let list = engagement.byPhoto;
+    if (engPhotoSearch.trim()) {
+      const q = engPhotoSearch.trim().toLowerCase();
+      list = list.filter(p => p.nickname.toLowerCase().includes(q) || (p.club && p.club.toLowerCase().includes(q)));
+    }
+    return [...list].sort((a, b) => photoSort === "views" ? b.views - a.views : b.rate - a.rate);
+  }, [engagement, engPhotoSearch, photoSort]);
+
+  const filteredUsers = useMemo(() => {
+    if (!engagement) return [];
+    let list = engagement.byUser;
+    if (engUserSearch.trim()) {
+      const q = engUserSearch.trim().toLowerCase();
+      list = list.filter(u => u.email.toLowerCase().includes(q));
+    }
+    return [...list].sort((a, b) => userSort === "views" ? b.views - a.views : b.rate - a.rate);
+  }, [engagement, engUserSearch, userSort]);
 
   if (loading) {
     return (
@@ -243,6 +270,26 @@ export function AdminPanel() {
         </div>
       )}
 
+      {/* Photo modal */}
+      {photoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80" onClick={() => setPhotoModal(null)}>
+          <div className="relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={photoModal.image_url}
+              alt={photoModal.nickname}
+              className="w-full rounded-2xl object-contain max-h-[70vh]"
+            />
+            <p className="text-center text-sm font-semibold mt-3">{photoModal.nickname}</p>
+            <button
+              onClick={() => setPhotoModal(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-surface rounded-full flex items-center justify-center border border-border/50 text-muted hover:text-foreground cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {tab === "clicks" && engagement && (
         <div className="space-y-4">
           {/* 스프레드시트 링크 */}
@@ -276,6 +323,20 @@ export function AdminPanel() {
                 <p className="text-[10px] text-muted">전환율</p>
               </div>
             </div>
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/20 mb-3">
+              <div className="text-center">
+                <p className="text-sm font-bold">{engagement.total.uniqueViewers}명</p>
+                <p className="text-[10px] text-muted">본 사람</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold">{engagement.total.uniqueClickers}명</p>
+                <p className="text-[10px] text-muted">누른 사람</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-bold">{Math.max(0, engagement.total.uniqueViewers - engagement.total.uniqueClickers)}명</p>
+                <p className="text-[10px] text-muted">안 누른 사람</p>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/20">
               <div className="text-center">
                 <p className="text-sm font-bold">{engagement.total.loggedInViews} / {engagement.total.loggedInClicks}</p>
@@ -290,23 +351,57 @@ export function AdminPanel() {
 
           {/* 사진별 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
-            <h4 className="text-xs font-semibold text-muted mb-3">사진별 ({engagement.byPhoto.length}개)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold text-muted">사진별 ({filteredPhotos.length}개)</h4>
+              <div className="relative">
+                <button
+                  onClick={() => setPhotoSortOpen(!photoSortOpen)}
+                  className="flex items-center gap-1.5 text-xs text-muted font-medium px-3 h-7 rounded-lg cursor-pointer hover:text-foreground transition-colors"
+                  style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
+                >
+                  {photoSort === "views" ? "조회순" : "전환율순"}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+                {photoSortOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setPhotoSortOpen(false)} />
+                    <div className="absolute right-0 top-8 z-50 rounded-xl py-1 min-w-[100px] animate-card-rise"
+                      style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)" }}
+                    >
+                      {([["views", "조회순"], ["rate", "전환율순"]] as const).map(([value, label]) => (
+                        <button key={value} onClick={() => { setPhotoSort(value); setPhotoSortOpen(false); setPhotoPage(0); }}
+                          className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${photoSort === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <input
+              type="text"
+              value={engPhotoSearch}
+              onChange={(e) => { setEngPhotoSearch(e.target.value); setPhotoPage(0); }}
+              placeholder="닉네임 또는 동아리로 검색"
+              className="w-full bg-black/30 text-xs text-foreground px-3 py-1.5 rounded-lg border border-border/50 outline-none placeholder:text-muted/50 mb-3"
+            />
             <div className="space-y-2">
-              {engagement.byPhoto.length === 0 ? (
+              {filteredPhotos.length === 0 ? (
                 <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
-              ) : engagement.byPhoto.slice(photoPage * 10, photoPage * 10 + 10).map((p) => (
-                <div key={p.photo_id} className="flex items-center gap-2 py-1.5">
+              ) : filteredPhotos.slice(photoPage * 10, photoPage * 10 + 10).map((p) => (
+                <div key={p.photo_id} className="flex items-center gap-2 py-1.5 cursor-pointer hover:bg-white/5 rounded-lg px-1 -mx-1 transition-colors" onClick={() => setPhotoModal({ nickname: p.nickname, image_url: p.image_url, thumb_url: p.thumb_url })}>
                   <SchoolBadge school={p.school as "yonsei" | "korea"} />
                   <span className="text-xs font-semibold flex-1 truncate">{p.nickname}</span>
+                  <span className="text-[10px] text-muted">{p.unique_viewers}명/{p.unique_clickers}명</span>
                   <span className="text-xs text-muted">{p.views}뷰</span>
                   <span className="text-xs text-muted">{p.clicks}클릭</span>
                   <span className="text-xs font-bold w-10 text-right">{p.rate}%</span>
                 </div>
               ))}
             </div>
-            {engagement.byPhoto.length > 10 && (
+            {filteredPhotos.length > 10 && (
               <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
-                {Array.from({ length: Math.ceil(engagement.byPhoto.length / 10) }, (_, i) => (
+                {Array.from({ length: Math.ceil(filteredPhotos.length / 10) }, (_, i) => (
                   <button key={i} onClick={() => setPhotoPage(i)}
                     className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${photoPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
                     {i + 1}
@@ -318,11 +413,44 @@ export function AdminPanel() {
 
           {/* 사용자별 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
-            <h4 className="text-xs font-semibold text-muted mb-3">사용자별 ({engagement.byUser.length}명)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold text-muted">사용자별 ({filteredUsers.length}명)</h4>
+              <div className="relative">
+                <button
+                  onClick={() => setUserSortOpen(!userSortOpen)}
+                  className="flex items-center gap-1.5 text-xs text-muted font-medium px-3 h-7 rounded-lg cursor-pointer hover:text-foreground transition-colors"
+                  style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 1px 3px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)" }}
+                >
+                  {userSort === "views" ? "조회순" : "전환율순"}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                </button>
+                {userSortOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserSortOpen(false)} />
+                    <div className="absolute right-0 top-8 z-50 rounded-xl py-1 min-w-[100px] animate-card-rise"
+                      style={{ background: "linear-gradient(180deg, #2a2a2a 0%, #1e1e1e 100%)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)" }}
+                    >
+                      {([["views", "조회순"], ["rate", "전환율순"]] as const).map(([value, label]) => (
+                        <button key={value} onClick={() => { setUserSort(value); setUserSortOpen(false); setUserPage(0); }}
+                          className={`w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer ${userSort === value ? "text-foreground font-semibold" : "text-muted hover:text-foreground hover:bg-white/5"}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <input
+              type="text"
+              value={engUserSearch}
+              onChange={(e) => { setEngUserSearch(e.target.value); setUserPage(0); }}
+              placeholder="이메일로 검색"
+              className="w-full bg-black/30 text-xs text-foreground px-3 py-1.5 rounded-lg border border-border/50 outline-none placeholder:text-muted/50 mb-3"
+            />
             <div className="space-y-2">
-              {engagement.byUser.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <p className="text-xs text-muted text-center py-4">아직 기록이 없습니다</p>
-              ) : engagement.byUser.slice(userPage * 10, userPage * 10 + 10).map((u) => (
+              ) : filteredUsers.slice(userPage * 10, userPage * 10 + 10).map((u) => (
                 <div key={u.user_id} className="flex items-center gap-2 py-1.5">
                   <span className="text-xs flex-1 truncate">{u.email}</span>
                   <span className="text-xs text-muted">{u.views}뷰</span>
@@ -331,9 +459,9 @@ export function AdminPanel() {
                 </div>
               ))}
             </div>
-            {engagement.byUser.length > 10 && (
+            {filteredUsers.length > 10 && (
               <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
-                {Array.from({ length: Math.ceil(engagement.byUser.length / 10) }, (_, i) => (
+                {Array.from({ length: Math.ceil(filteredUsers.length / 10) }, (_, i) => (
                   <button key={i} onClick={() => setUserPage(i)}
                     className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${userPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
                     {i + 1}

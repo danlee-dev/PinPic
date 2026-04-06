@@ -128,8 +128,8 @@ export async function removeAdmin(userId: string): Promise<boolean> {
 }
 
 export interface EngagementStats {
-  total: { views: number; clicks: number; rate: number; loggedInViews: number; anonViews: number; loggedInClicks: number; anonClicks: number };
-  byPhoto: { photo_id: string; nickname: string; school: string; views: number; clicks: number; rate: number }[];
+  total: { views: number; clicks: number; rate: number; loggedInViews: number; anonViews: number; loggedInClicks: number; anonClicks: number; uniqueViewers: number; uniqueClickers: number };
+  byPhoto: { photo_id: string; nickname: string; school: string; club: string | null; image_url: string; thumb_url: string | null; views: number; clicks: number; rate: number; unique_viewers: number; unique_clickers: number }[];
   byUser: { user_id: string; email: string; views: number; clicks: number; rate: number }[];
 }
 
@@ -143,7 +143,7 @@ export async function fetchEngagementStats(): Promise<EngagementStats> {
     supabase.rpc("engagement_by_user"),
   ]);
 
-  const t = totals || { total_views: 0, total_clicks: 0, logged_in_views: 0, anon_views: 0, logged_in_clicks: 0, anon_clicks: 0 };
+  const t = totals || { total_views: 0, total_clicks: 0, logged_in_views: 0, anon_views: 0, logged_in_clicks: 0, anon_clicks: 0, unique_viewers: 0, unique_clickers: 0 };
   const totalViews = t.total_views || 0;
   const totalClicks = t.total_clicks || 0;
 
@@ -166,9 +166,9 @@ export async function fetchEngagementStats(): Promise<EngagementStats> {
   }
 
   return {
-    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0, loggedInViews: t.logged_in_views || 0, anonViews: t.anon_views || 0, loggedInClicks: t.logged_in_clicks || 0, anonClicks: t.anon_clicks || 0 },
+    total: { views: totalViews, clicks: totalClicks, rate: totalViews > 0 ? Math.round((totalClicks / totalViews) * 100) : 0, loggedInViews: t.logged_in_views || 0, anonViews: t.anon_views || 0, loggedInClicks: t.logged_in_clicks || 0, anonClicks: t.anon_clicks || 0, uniqueViewers: t.unique_viewers || 0, uniqueClickers: t.unique_clickers || 0 },
     byPhoto: ((byPhoto || []) as any[])
-      .map(p => ({ photo_id: p.photo_id, nickname: p.nickname, school: p.school, views: p.views || 0, clicks: p.clicks || 0, rate: p.views > 0 ? Math.round((p.clicks / p.views) * 100) : 0 }))
+      .map(p => ({ photo_id: p.photo_id, nickname: p.nickname, school: p.school, club: p.club || null, image_url: p.image_url, thumb_url: p.thumb_url || null, views: p.views || 0, clicks: p.clicks || 0, rate: p.views > 0 ? Math.round((p.clicks / p.views) * 100) : 0, unique_viewers: p.unique_viewers || 0, unique_clickers: p.unique_clickers || 0 }))
       .sort((a, b) => b.views - a.views),
     byUser: userRows
       .map(u => ({ user_id: u.user_id, email: emailMap[u.user_id] || u.user_id.slice(0, 8) + "...", views: u.views, clicks: u.clicks, rate: u.views > 0 ? Math.round((u.clicks / u.views) * 100) : 0 }))
