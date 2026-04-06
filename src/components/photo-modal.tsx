@@ -84,18 +84,65 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
     }
   };
 
+  const addWatermark = (imgBlob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+
+        const fontSize = Math.max(11, img.width * 0.022);
+        ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        const label = "pinpic.vercel.app";
+        const tw = ctx.measureText(label).width;
+        const px = fontSize * 0.7;
+        const py = fontSize * 0.45;
+        const bw = tw + px * 2;
+        const bh = fontSize + py * 2;
+        const m = fontSize * 0.7;
+        const bx = img.width - bw - m;
+        const by = img.height - bh - m;
+        const r = bh / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + bw - r, by);
+        ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+        ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+        ctx.lineTo(bx + r, by + bh);
+        ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+        ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(0,0,0,0.55)";
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, bx + bw / 2, by + bh / 2 + 0.5);
+
+        canvas.toBlob((b) => b ? resolve(b) : reject(), "image/jpeg", 0.92);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(imgBlob);
+    });
+  };
+
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? `${window.location.origin}/photo/${entry.id}` : "";
     const text = `${entry.nickname}님의 사진에 투표해주세요! 제1회 캠퍼스 사진 고연전 - ${entry.school === "yonsei" ? "연세대" : "고려대"} 지원 사격!\n${url}`;
 
     if (navigator.share) {
       try {
-        // Try sharing with image file (enables Instagram Stories, etc.)
         const imgUrl = entry.thumb_url || entry.image_url;
         const res = await fetch(imgUrl);
         const blob = await res.blob();
-        const ext = blob.type.includes("png") ? "png" : "jpg";
-        const file = new File([blob], `pinpic-${entry.nickname}.${ext}`, { type: blob.type });
+        const watermarked = await addWatermark(blob);
+        const file = new File([watermarked], `pinpic-${entry.nickname}.jpg`, { type: "image/jpeg" });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ text, files: [file] });
@@ -103,7 +150,6 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
           await navigator.share({ text });
         }
       } catch {
-        // Fallback to text-only share
         try { await navigator.share({ text }); } catch {}
       }
     } else {
