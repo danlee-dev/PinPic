@@ -84,7 +84,15 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                   <img src="/korea-logo.png" alt="고려대" className="w-4 h-4 object-contain" />
                 </div>
               </div>
-              <div className="relative h-6 rounded-full overflow-hidden bg-surface" style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}>
+              <div
+                className="relative h-7 rounded-full overflow-hidden bg-[#2a2a2a]"
+                style={{
+                  boxShadow:
+                    "inset 0 2px 4px rgba(0,0,0,0.5), " +
+                    "inset 0 -1px 2px rgba(255,255,255,0.08), " +
+                    "0 4px 14px rgba(0,0,0,0.4)",
+                }}
+              >
                 <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
                   style={{
                     width: totalVotes === 0 ? "0%" : `${yonseiPct}%`,
@@ -99,6 +107,27 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                     transformOrigin: "right",
                     transform: animated ? "scaleX(1)" : "scaleX(0)",
                   }} />
+                {/* Top convex highlight */}
+                <div
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                    borderRadius: "9999px 9999px 0 0",
+                  }}
+                />
+                {/* Bottom shadow for depth */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                    borderRadius: "0 0 9999px 9999px",
+                  }}
+                />
+                {/* Edge highlight */}
+                <div
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+                />
               </div>
               {winnerSchool !== "tie" && (
                 <p className="mt-3 text-[11px] font-semibold">
