@@ -646,8 +646,8 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
               </svg>
             )}
             <span
-              className={`font-black text-white ${isHero ? "text-[24px]" : isPodium ? "text-[16px]" : "text-[14px]"}`}
-              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}
+              className={`font-rank text-white ${isHero ? "text-[24px]" : isPodium ? "text-[19px]" : "text-[17px]"} leading-none`}
+              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)", transform: "translateY(2px)", display: "inline-block" }}
             >
               {rank}
             </span>

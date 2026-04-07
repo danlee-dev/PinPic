@@ -1,5 +1,12 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
 @import "tailwindcss";
+
+/* Display font for ranking numbers */
+.font-rank {
+  font-family: "Bebas Neue", "Pretendard Variable", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
 
 @theme inline {
   --color-background: #0a0a0a;
