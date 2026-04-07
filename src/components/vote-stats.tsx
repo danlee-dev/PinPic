@@ -547,9 +547,9 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
         )}
       </div>
 
-      {/* Locked metadata + unlock CTA. Compact (3 rows) for non-hero. */}
-      <div className={`${isHero ? "mx-5 mb-5 mt-1" : "mx-3.5 mb-3.5 mt-1"} rounded-2xl border border-white/8 bg-black/30 overflow-hidden`}>
-        <div className={`${isHero ? "px-4 py-3 space-y-1.5" : "px-3 py-2.5 space-y-1"} select-none`} aria-hidden>
+      {/* Locked metadata — flush with card, separated by hairline only */}
+      <div className={`${isHero ? "px-5 pt-3 pb-3" : "px-3.5 pt-2.5 pb-3"} border-t border-white/5 select-none`} aria-hidden>
+        <div className={`${isHero ? "space-y-1.5" : "space-y-1"}`}>
           {isHero ? (
             <>
               <LockedRow icon="pin" label="촬영지" placeholder="홍대입구역 8번 출구" />
@@ -567,17 +567,17 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
             </>
           )}
         </div>
-        <button
-          onClick={onUnlock}
-          className="w-full py-2.5 text-[11px] font-semibold text-yellow-300 bg-yellow-300/6 hover:bg-yellow-300/10 border-t border-yellow-300/10 cursor-pointer transition-colors flex items-center justify-center gap-1.5"
-        >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-          잠금 해제하기
-        </button>
       </div>
+      <button
+        onClick={onUnlock}
+        className="w-full py-3 text-[11px] font-semibold text-yellow-300 hover:bg-yellow-300/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+      >
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0110 0v4" />
+        </svg>
+        잠금 해제하기
+      </button>
     </div>
   );
 }
