@@ -149,13 +149,31 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
 
             <button
               onClick={handleStartEmail}
-              className="relative w-full py-3.5 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all"
+              className="relative w-full h-12 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
-                boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
+                background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
+                boxShadow:
+                  "inset 0 2px 4px rgba(255,255,255,0.25), " +
+                  "inset 0 -2px 4px rgba(0,0,0,0.45), " +
+                  "inset 0 0 0 1px rgba(255,255,255,0.12), " +
+                  "0 10px 28px rgba(0,0,0,0.5)",
               }}
             >
-              990원에 사전신청 하기
+              <div
+                className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                  borderRadius: "16px 16px 0 0",
+                }}
+              />
+              <div
+                className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+                style={{
+                  background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                  borderRadius: "0 0 16px 16px",
+                }}
+              />
+              <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">990원에 사전신청 하기</span>
             </button>
             <button
               onClick={handleDismiss}
@@ -197,13 +215,31 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="relative w-full mt-3 py-3.5 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all disabled:opacity-60"
+              className="relative w-full mt-3 h-12 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all disabled:opacity-60 overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
-                boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
+                background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
+                boxShadow:
+                  "inset 0 2px 4px rgba(255,255,255,0.25), " +
+                  "inset 0 -2px 4px rgba(0,0,0,0.45), " +
+                  "inset 0 0 0 1px rgba(255,255,255,0.12), " +
+                  "0 10px 28px rgba(0,0,0,0.5)",
               }}
             >
-              {submitting ? "신청 중..." : "사전 신청 완료"}
+              <div
+                className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                  borderRadius: "16px 16px 0 0",
+                }}
+              />
+              <div
+                className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+                style={{
+                  background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                  borderRadius: "0 0 16px 16px",
+                }}
+              />
+              <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{submitting ? "신청 중..." : "사전 신청 완료"}</span>
             </button>
             <button
               onClick={handleDismiss}

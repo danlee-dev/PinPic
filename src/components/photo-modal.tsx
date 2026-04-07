@@ -308,13 +308,31 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
               <button
                 onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); }}
-                className="relative w-full py-3.5 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
+                className="relative w-full h-12 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
                 style={{
-                  background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
-                  boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
+                  background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
+                  boxShadow:
+                    "inset 0 2px 4px rgba(255,255,255,0.25), " +
+                    "inset 0 -2px 4px rgba(0,0,0,0.45), " +
+                    "inset 0 0 0 1px rgba(255,255,255,0.12), " +
+                    "0 10px 28px rgba(0,0,0,0.5)",
                 }}
               >
-                <span className="flex items-center justify-between gap-2 px-2">
+                <div
+                  className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                    borderRadius: "16px 16px 0 0",
+                  }}
+                />
+                <div
+                  className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                    borderRadius: "0 0 16px 16px",
+                  }}
+                />
+                <span className="relative flex items-center justify-between gap-2 px-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                   <span className="flex items-center gap-2">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />

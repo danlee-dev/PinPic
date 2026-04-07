@@ -358,9 +358,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                 "inset 0 2px 4px rgba(255,255,255,0.25), " +
                 "inset 0 -2px 4px rgba(0,0,0,0.45), " +
                 "inset 0 0 0 1px rgba(255,255,255,0.12), " +
-                "0 10px 28px rgba(0,0,0,0.5), " +
-                "0 4px 14px rgba(26,109,255,0.35), " +
-                "0 4px 14px rgba(232,25,62,0.35)",
+                "0 10px 28px rgba(0,0,0,0.5)",
             }}
           >
             {/* Top convex highlight */}

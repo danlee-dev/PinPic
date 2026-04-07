@@ -110,8 +110,14 @@ function MiniVoteBar({ entries }: { entries: PhotoEntry[] }) {
           <img src="/yonsei-logo.png" alt="연세대" className="w-4 h-4 rounded-full object-cover" />
         </div>
       </div>
-      <div className="relative h-7 rounded-full overflow-hidden bg-[#2a2a2a]"
-        style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}
+      <div
+        className="relative h-7 rounded-full overflow-hidden bg-[#2a2a2a]"
+        style={{
+          boxShadow:
+            "inset 0 2px 4px rgba(0,0,0,0.5), " +
+            "inset 0 -1px 2px rgba(255,255,255,0.08), " +
+            "0 4px 14px rgba(0,0,0,0.4)",
+        }}
       >
         <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
           style={{
@@ -127,7 +133,27 @@ function MiniVoteBar({ entries }: { entries: PhotoEntry[] }) {
             transformOrigin: "right",
             transform: animated ? "scaleX(1)" : "scaleX(0)",
           }} />
-        <div className="absolute inset-x-0 top-0 h-1/2 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)" }} />
+        {/* Top convex highlight */}
+        <div
+          className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+            borderRadius: "9999px 9999px 0 0",
+          }}
+        />
+        {/* Bottom shadow for depth */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+          style={{
+            background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+            borderRadius: "0 0 9999px 9999px",
+          }}
+        />
+        {/* Edge highlight */}
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none"
+          style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+        />
         <div className="absolute inset-0 flex items-center justify-between px-3">
           <span className="text-white text-[10px] font-bold drop-shadow-md">{kVotes}</span>
           <span className="text-white text-[10px] font-bold drop-shadow-md">{yVotes}</span>
@@ -566,6 +592,40 @@ export function MasonryGallery() {
               >
                 <div className="absolute inset-0 pointer-events-none" style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", borderRight: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", borderRadius: "0 0 24px 24px" }} />
 
+              {/* Reveal-mode title + count-up stats */}
+              {showResults && uniqueEntries.length > 0 && (() => {
+                const totalVotesAll = uniqueEntries.reduce((s, e) => s + e.votes, 0);
+                return (
+                  <div className="relative mb-4 text-center">
+                    <p className="text-[10px] font-semibold tracking-[0.2em] text-foreground/55 uppercase mb-1">
+                      제1회 캠퍼스 사진 고연전
+                    </p>
+                    <p className="text-[15px] font-black mb-3">결과가 발표됐어요</p>
+                    <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                      <div>
+                        <p className="text-[18px] font-black text-foreground leading-none">
+                          <CountUp to={totalVotesAll} duration={1500} />
+                        </p>
+                        <p className="text-[9px] text-muted mt-1">총 투표수</p>
+                      </div>
+                      <div>
+                        <p className="text-[18px] font-black text-foreground leading-none">
+                          <CountUp to={uniqueEntries.length} duration={1200} delay={150} />
+                        </p>
+                        <p className="text-[9px] text-muted mt-1">출품작</p>
+                      </div>
+                      <div>
+                        <p className="text-[18px] font-black text-foreground leading-none">
+                          <CountUp to={totalVoters} duration={1500} delay={300} />
+                        </p>
+                        <p className="text-[9px] text-muted mt-1">참여자</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted mt-3">양교의 낭만이 모인 결과를 확인하세요</p>
+                  </div>
+                );
+              })()}
+
               {/* Mini vote bar */}
               {uniqueEntries.length > 0 && (
                 <MiniVoteBar entries={uniqueEntries} />
@@ -575,7 +635,9 @@ export function MasonryGallery() {
               <button
                 onClick={() => {
                   const url = typeof window !== "undefined" ? window.location.origin : "";
-                  const text = `제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!\n${url}`;
+                  const liveText = `제1회 캠퍼스 사진 고연전 - 어느 캠퍼스가 더 낭만적인가? 지금 바로 참전해서 투표로 지원 사격하세요!\n${url}`;
+                  const revealText = `제1회 캠퍼스 사진 고연전 결과가 발표됐어요! TOP 10 명예의 전당 보러가기 →\n${url}`;
+                  const text = showResults ? revealText : liveText;
                   if (navigator.share) {
                     navigator.share({ text }).catch(() => {});
                   } else {
@@ -597,7 +659,7 @@ export function MasonryGallery() {
                   <polyline points="16 6 12 2 8 6" />
                   <line x1="12" y1="2" x2="12" y2="15" />
                 </svg>
-                단톡방에 화력 지원 요청하기
+                {showResults ? "친구에게 결과 공유하기" : "단톡방에 화력 지원 요청하기"}
               </button>
               </div>
             </div>
