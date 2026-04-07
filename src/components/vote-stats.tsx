@@ -530,8 +530,8 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
         {/* Top dark gradient + header (rank, school badge, votes) */}
         <div className="absolute inset-x-0 top-0 pointer-events-none"
           style={{
-            height: isHero ? "30%" : "33%",
-            background: "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 60%, transparent 100%)",
+            height: isHero ? "38%" : "42%",
+            background: "linear-gradient(180deg, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)",
           }} />
         <div className={`absolute inset-x-0 top-0 flex items-center justify-between select-none ${isHero ? "px-4 pt-3.5 pb-3" : "px-3 pt-2.5 pb-2"}`}>
           <div className="flex items-center gap-1.5 min-w-0">
@@ -577,8 +577,8 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
         {/* Bottom dark gradient + author + locked meta + unlock CTA */}
         <div className="absolute inset-x-0 bottom-0 pointer-events-none"
           style={{
-            height: isHero ? "62%" : "70%",
-            background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.95) 100%)",
+            height: isHero ? "70%" : "78%",
+            background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 35%, rgba(0,0,0,0.98) 100%)",
           }} />
         <div className={`absolute inset-x-0 bottom-0 select-none ${isHero ? "px-5 pb-4 pt-4" : "px-3 pb-3 pt-3"}`}>
           <p
