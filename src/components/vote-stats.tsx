@@ -767,16 +767,36 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
     el.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
   };
 
-  // Center the first card on mount
+  // Center the first card on mount. Wait for two frames + a short timeout
+  // so the layout is fully measured before computing scrollLeft, otherwise
+  // the offsetLeft we read can be off by a few px and the snap looks crooked.
   useEffect(() => {
     if (entries.length === 0) return;
-    const id = requestAnimationFrame(() => {
-      scrollToIdx(0, false);
-      setActiveIdx(0);
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        scrollToIdx(0, false);
+        setActiveIdx(0);
+        // One more correction after fonts/images settle
+        window.setTimeout(() => scrollToIdx(0, false), 120);
+      });
     });
-    return () => cancelAnimationFrame(id);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries.length]);
+
+  // Recompute the active card center on viewport resize so a rotation lands
+  // exactly in the middle even after the user resizes their window.
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const onResize = () => scrollToIdx(activeIdx, false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIdx, entries.length]);
 
   // Auto-advance every 2.5s: 1 → 2 → 3 → 1 → 2 → 3 → ...
   // After the last card, jump straight back to the first.
@@ -869,7 +889,7 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
           <div
             key={entry.id}
             ref={(el) => { cardRefs.current[i] = el; }}
-            className="shrink-0 w-[76%] max-w-[300px] transition-transform duration-300"
+            className="shrink-0 w-[76%] transition-transform duration-300"
             style={{ transform: i === activeIdx ? "scale(1)" : "scale(0.92)", opacity: i === activeIdx ? 1 : 0.55 }}
           >
             <TopCard
