@@ -17,11 +17,13 @@ import {
   removeAdmin,
   fetchEngagementStats,
   EngagementStats,
+  fetchOriginalRanking,
+  RealVoteRow,
 } from "@/lib/admin";
 import { getRevealPreview, setRevealPreview } from "@/lib/reveal-preview";
 import { SchoolBadge } from "./school-badge";
 
-type AdminTab = "pending" | "photos" | "clicks" | "settings";
+type AdminTab = "pending" | "photos" | "clicks" | "original" | "settings";
 
 function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
   if (totalPages <= 1) return null;
@@ -92,6 +94,7 @@ export function AdminPanel() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [photoSearch, setPhotoSearch] = useState("");
   const [engagement, setEngagement] = useState<EngagementStats | null>(null);
+  const [originalRanking, setOriginalRanking] = useState<RealVoteRow[]>([]);
   const [photoPage, setPhotoPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
   const [photoSort, setPhotoSort] = useState<"views" | "rate">("views");
@@ -109,13 +112,14 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, ann, adm, eng] = await Promise.all([
+    const [p, all, vp, ann, adm, eng, orig] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
       fetchResultAnnouncement(),
       fetchAdmins(),
       fetchEngagementStats(),
+      fetchOriginalRanking(),
     ]);
     setPending(p);
     setEngagement(eng);
@@ -123,6 +127,7 @@ export function AdminPanel() {
     setPeriod(vp);
     setAnnouncement(ann);
     setAdmins(adm);
+    setOriginalRanking(orig);
     if (vp) {
       setEditStart(toKSTInput(vp.start));
       setEditEnd(toKSTInput(vp.end));
@@ -289,11 +294,12 @@ export function AdminPanel() {
       )}
 
       {/* Admin sub-tabs */}
-      <div className="flex gap-1 mb-4 bg-surface rounded-xl p-1">
+      <div className="flex gap-1 mb-4 bg-surface rounded-xl p-1 overflow-x-auto hide-scrollbar">
         {([
-          ["pending", `승인 대기 (${pending.length})`],
-          ["photos", "사진 관리"],
-          ["clicks", `관심도`],
+          ["pending", `대기 (${pending.length})`],
+          ["photos", "사진"],
+          ["clicks", "관심도"],
+          ["original", "원본 순위"],
           ["settings", "설정"],
         ] as const).map(([value, label]) => (
           <button
@@ -536,6 +542,62 @@ export function AdminPanel() {
               ))}
             </div>
             <Pagination page={userPage} totalPages={Math.ceil(filteredUsers.length / 10)} onChange={setUserPage} />
+          </div>
+        </div>
+      )}
+
+      {tab === "original" && (
+        <div className="space-y-4">
+          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+            <h4 className="text-xs font-semibold text-muted mb-2">원본 인기 순위</h4>
+            <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">
+              실제 votes 테이블 기준 (조작 오프셋 미반영). 일반 사용자에게 보이는 화면은 조작 반영된 수치이고, 이 값은 조작 후에도 그대로 유지됩니다.
+            </p>
+            <div className="space-y-2">
+              {originalRanking.length === 0 ? (
+                <p className="text-xs text-muted text-center py-4">데이터가 없습니다</p>
+              ) : (
+                originalRanking.map((p, i) => {
+                  const displayed = p.votes + (p.vote_offset || 0);
+                  const hasOffset = (p.vote_offset || 0) !== 0;
+                  return (
+                    <div key={p.id} className="flex items-center gap-2 py-1.5 px-1">
+                      <span className="text-[11px] font-bold text-muted w-6 text-right">{i + 1}</span>
+                      <span className={`text-[10px] font-semibold w-10 ${p.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                        {p.school === "yonsei" ? "연세대" : "고려대"}
+                      </span>
+                      <span className="text-xs flex-1 truncate">{p.nickname}</span>
+                      <div className="text-right">
+                        <p className="text-xs font-bold">{p.votes}<span className="text-[9px] text-muted ml-0.5">표</span></p>
+                        {hasOffset && (
+                          <p className="text-[9px] text-yellow-400/80 leading-none mt-0.5">
+                            +{p.vote_offset} → {displayed}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="bg-surface rounded-2xl p-4 border border-border/30">
+            <h4 className="text-xs font-semibold text-muted mb-2">학교 합계 (원본)</h4>
+            <div className="grid grid-cols-2 gap-3 text-center">
+              <div>
+                <p className="text-[10px] text-muted">연세대</p>
+                <p className="text-2xl font-black text-yonsei">
+                  {originalRanking.filter(p => p.school === "yonsei").reduce((s, p) => s + p.votes, 0)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] text-muted">고려대</p>
+                <p className="text-2xl font-black text-korea">
+                  {originalRanking.filter(p => p.school === "korea").reduce((s, p) => s + p.votes, 0)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

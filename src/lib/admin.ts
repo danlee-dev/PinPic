@@ -93,6 +93,27 @@ export async function fetchAllPhotosAdmin(): Promise<PhotoWithVotesRow[]> {
   return data as PhotoWithVotesRow[];
 }
 
+export interface RealVoteRow {
+  id: string;
+  nickname: string;
+  school: "yonsei" | "korea";
+  votes: number;        // real count (untouched)
+  vote_offset: number;  // manual offset applied for display
+}
+
+export async function fetchOriginalRanking(): Promise<RealVoteRow[]> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("photos_with_real_votes")
+    .select("id, nickname, school, votes, vote_offset")
+    .eq("status", "approved");
+  if (error) {
+    console.error("Failed to fetch original ranking:", error);
+    return [];
+  }
+  return ((data as RealVoteRow[]) || []).sort((a, b) => b.votes - a.votes);
+}
+
 export async function approvePhoto(id: string): Promise<boolean> {
   const supabase = getSupabase();
   const { error } = await supabase

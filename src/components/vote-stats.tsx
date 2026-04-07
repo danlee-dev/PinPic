@@ -6,6 +6,7 @@ import { ConfettiBurst } from "./confetti-burst";
 import { FakeDoorModal } from "./fake-door-modal";
 import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
+import { fetchVoteOverrides } from "@/lib/api";
 
 interface VoteStatsProps {
   entries: PhotoEntry[];
@@ -19,6 +20,12 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
   const [confettiKey, setConfettiKey] = useState(0);
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const [fakeDoorSource, setFakeDoorSource] = useState("sticky_bar");
+  const [voteOverrides, setVoteOverrides] = useState<Map<string, number>>(new Map());
+
+  // Load vote overrides once on mount (only used to skew the displayed TOP 10)
+  useEffect(() => {
+    fetchVoteOverrides().then(setVoteOverrides);
+  }, []);
   const revealed = revealMode !== "hidden";
 
   const openFakeDoor = (src: string) => {
@@ -50,7 +57,12 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
   const yonseiVotedCount = yonseiEntries.filter((e) => votedIds.has(e.id)).length;
   const koreaVotedCount = koreaEntries.filter((e) => votedIds.has(e.id)).length;
 
-  const sortedByVotes = [...entries].sort((a, b) => b.votes - a.votes);
+  // Apply vote_overrides for the Hall of Fame display only.
+  // Real vote totals (mini bar, school totals) stay untouched above.
+  const displayVotes = (e: PhotoEntry) => Math.max(0, e.votes + (voteOverrides.get(e.id) ?? 0));
+  const sortedByVotes = [...entries]
+    .map((e) => ({ ...e, votes: displayVotes(e) }))
+    .sort((a, b) => b.votes - a.votes);
   const winnerSchool: "yonsei" | "korea" | "tie" =
     yonseiVotes === koreaVotes ? "tie" : (yonseiVotes > koreaVotes ? "yonsei" : "korea");
 
@@ -412,33 +424,37 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
               onUnlock={(rank) => openFakeDoor(`inline_card_${rank}`)}
             />
 
-            {/* #4 ~ #10 — masonry: distribute by reading order (zigzag), heights free */}
+            {/* #4 ~ #10 — masonry: distribute to the shorter column so the
+                last card lands on whichever side has more empty space */}
             {sortedByVotes.length > 3 && (() => {
               const rest = sortedByVotes.slice(3, 10);
-              // Distribute by index parity: even indices -> left column, odd -> right
-              const left = rest.filter((_, i) => i % 2 === 0);
-              const right = rest.filter((_, i) => i % 2 === 1);
-              const renderCard = (entry: PhotoEntry, idxInRest: number) => {
-                const rank = idxInRest + 4;
-                return (
-                  <div key={entry.id} className="mb-3">
-                    <TopCard
-                      entry={entry}
-                      rank={rank}
-                      variant="grid"
-                      onPhotoClick={onPhotoClick}
-                      onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
-                    />
-                  </div>
-                );
-              };
+              const left: { entry: PhotoEntry; rank: number }[] = [];
+              const right: { entry: PhotoEntry; rank: number }[] = [];
+              rest.forEach((entry, i) => {
+                const rank = i + 4;
+                // All cards share the same aspect ratio, so we can simply
+                // push to whichever column currently has fewer cards.
+                if (left.length <= right.length) left.push({ entry, rank });
+                else right.push({ entry, rank });
+              });
+              const renderCard = ({ entry, rank }: { entry: PhotoEntry; rank: number }) => (
+                <div key={entry.id} className="mb-3">
+                  <TopCard
+                    entry={entry}
+                    rank={rank}
+                    variant="grid"
+                    onPhotoClick={onPhotoClick}
+                    onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
+                  />
+                </div>
+              );
               return (
                 <div className="mt-4 flex gap-3">
                   <div className="flex-1 min-w-0">
-                    {left.map((entry) => renderCard(entry, rest.indexOf(entry)))}
+                    {left.map(renderCard)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    {right.map((entry) => renderCard(entry, rest.indexOf(entry)))}
+                    {right.map(renderCard)}
                   </div>
                 </div>
               );
@@ -728,17 +744,16 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
   const resumeTimerRef = useRef<number | null>(null);
   const settleTimerRef = useRef<number | null>(null);
 
-  // Smoothly scroll a given index to the horizontal center of the container.
-  // Uses scrollIntoView with inline:center so the browser handles padding/gap
-  // arithmetic and lands exactly on the viewport center every time.
+  // Scroll a given index to the horizontal center of the carousel only.
+  // Avoid scrollIntoView because it can also adjust the vertical page scroll
+  // and yank the user back to the top whenever the auto-advance ticks.
   const scrollToIdx = (idx: number, smooth = true) => {
+    const el = scrollRef.current;
     const card = cardRefs.current[idx];
-    if (!card) return;
-    card.scrollIntoView({
-      behavior: smooth ? "smooth" : "auto",
-      inline: "center",
-      block: "nearest",
-    });
+    if (!el || !card) return;
+    const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+    const target = cardCenter - el.clientWidth / 2;
+    el.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
   };
 
   // Center the first card on mount
@@ -830,7 +845,12 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
     <div
       ref={scrollRef}
       className="flex gap-3 overflow-x-auto hide-scrollbar -mx-4 px-[12%]"
-      style={{ scrollBehavior: "auto", scrollSnapType: "none", WebkitOverflowScrolling: "touch" }}
+      style={{
+        scrollBehavior: "auto",
+        scrollSnapType: "none",
+        WebkitOverflowScrolling: "touch",
+        overflowAnchor: "none",
+      }}
     >
       {entries.map((entry, i) => {
         const rank = i + 1;

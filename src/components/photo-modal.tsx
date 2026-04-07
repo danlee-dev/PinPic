@@ -291,19 +291,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
             </button>
           ) : (
             <div className="mt-3 space-y-2">
-              {/* Location is always shown after reveal */}
-              <div className="rounded-2xl p-3 bg-white/5 border border-white/10 flex items-start gap-2.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/70 flex-shrink-0 mt-0.5">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-                  <circle cx="12" cy="10" r="3" />
-                </svg>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-muted uppercase tracking-wider font-semibold">촬영 장소</p>
-                  <p className="text-sm font-semibold text-foreground mt-0.5 break-words">
-                    {entry.location || "정보 없음"}
-                  </p>
-                </div>
-              </div>
+              {/* Location is intentionally hidden so the fake-door unlock keeps its purpose */}
 
               {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
               <button

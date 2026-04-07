@@ -42,6 +42,20 @@ export async function fetchPhotos(
   return (data as PhotoWithVotesRow[]).map(toPhotoEntry);
 }
 
+export async function fetchVoteOverrides(): Promise<Map<string, number>> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase.from("vote_overrides").select("photo_id, vote_offset");
+  if (error) {
+    console.error("Failed to fetch vote_overrides:", error);
+    return new Map();
+  }
+  const map = new Map<string, number>();
+  for (const row of (data || []) as { photo_id: string; vote_offset: number }[]) {
+    map.set(row.photo_id, row.vote_offset);
+  }
+  return map;
+}
+
 export async function fetchTotalVoters(): Promise<number> {
   const supabase = getSupabase();
   // Count distinct voter_ids by fetching the column and dedup client-side

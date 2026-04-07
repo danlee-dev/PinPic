@@ -28,6 +28,9 @@ body {
   font-family: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.025em;
+  /* Prevent the browser from auto-scrolling the page when DOM above
+     the viewport changes (e.g. carousel auto-advance reflowing cards). */
+  overflow-anchor: none;
 }
 
 .hide-scrollbar::-webkit-scrollbar { display: none; }
