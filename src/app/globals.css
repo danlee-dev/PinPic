@@ -101,6 +101,23 @@ body {
 }
 .animate-filter-switch { animation: filter-switch 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
+/* ---- Result CTA pulse ---- */
+@keyframes result-cta-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55), 0 8px 24px rgba(0,0,0,0.4); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 14px rgba(255, 215, 0, 0), 0 12px 32px rgba(255, 170, 0, 0.35); }
+}
+.animate-result-cta { animation: result-cta-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+@keyframes result-cta-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-result-cta-shimmer {
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: result-cta-shimmer 2.5s linear infinite;
+}
+
 /* ---- Header title entrance ---- */
 @keyframes title-reveal {
   0% { opacity: 0; transform: translateY(-10px); letter-spacing: 0.3em; }

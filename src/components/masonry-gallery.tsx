@@ -532,9 +532,26 @@ export function MasonryGallery() {
                   <img src="/poster.png" alt="제1회 사진 고연전" className="w-full rounded-t-3xl" />
                 </picture>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                  <span className="bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-4 py-1.5 rounded-full border border-white/15">
-                    결과 발표 4월 8일
-                  </span>
+                  {showResults ? (
+                    <button
+                      onClick={() => setActiveTab("stats")}
+                      className="relative overflow-hidden text-black text-[12px] font-bold px-5 py-2 rounded-full cursor-pointer animate-result-cta flex items-center gap-1.5"
+                      style={{
+                        background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
+                        border: "1px solid rgba(255,255,255,0.35)",
+                      }}
+                    >
+                      <span className="relative z-10">명예의 전당에서 순위 확인하기</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                      <span className="absolute inset-0 animate-result-cta-shimmer pointer-events-none" />
+                    </button>
+                  ) : (
+                    <span className="bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-4 py-1.5 rounded-full border border-white/15">
+                      결과 발표 4월 8일
+                    </span>
+                  )}
                 </div>
               </div>
 
