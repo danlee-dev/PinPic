@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School, VotingPeriod, ResultAnnouncement, RevealMode } from "@/lib/types";
-import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes } from "@/lib/api";
+import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes, fetchTotalVoters } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { fetchVotingPeriod, fetchResultAnnouncement, isResultRevealed, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { getRevealPreview, subscribeRevealPreview } from "@/lib/reveal-preview";
@@ -16,6 +16,7 @@ import { MyVotes } from "./my-votes";
 import { UserButton } from "./user-button";
 import { LoginPrompt } from "./login-prompt";
 import { AdminPanel } from "./admin-panel";
+import { CountUp } from "./count-up";
 
 type Filter = "all" | School;
 
@@ -169,6 +170,7 @@ export function MasonryGallery() {
   const [votingLoaded, setVotingLoaded] = useState(false);
   const [announcement, setAnnouncement] = useState<ResultAnnouncement | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
+  const [totalVoters, setTotalVoters] = useState<number>(0);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const canVote = isAdmin || isVotingOpen(votingPeriod);
@@ -180,6 +182,7 @@ export function MasonryGallery() {
       setVotingLoaded(true);
     });
     fetchResultAnnouncement().then(setAnnouncement);
+    fetchTotalVoters().then(setTotalVoters);
   }, []);
 
   // Track admin preview mode toggle (localStorage-based, admin only)

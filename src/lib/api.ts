@@ -42,6 +42,30 @@ export async function fetchPhotos(
   return (data as PhotoWithVotesRow[]).map(toPhotoEntry);
 }
 
+export async function fetchTotalVoters(): Promise<number> {
+  const supabase = getSupabase();
+  // Count distinct voter_ids by fetching the column and dedup client-side
+  // (small dataset, simpler than RPC)
+  const all: { voter_id: string }[] = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from("votes")
+      .select("voter_id")
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error("Failed to fetch voters:", error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return new Set(all.map((v) => v.voter_id)).size;
+}
+
 export async function fetchAllVoteTimes(): Promise<Map<string, number[]>> {
   const supabase = getSupabase();
   const all: { photo_id: string; created_at: string }[] = [];

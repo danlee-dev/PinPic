@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PhotoEntry, RevealMode } from "@/lib/types";
 import { ConfettiBurst } from "./confetti-burst";
 import { FakeDoorModal } from "./fake-door-modal";
@@ -84,7 +84,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                   <img src="/korea-logo.png" alt="고려대" className="w-4 h-4 object-contain" />
                 </div>
               </div>
-              <div className="relative h-6 rounded-full overflow-hidden bg-[#1a1a1a]" style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}>
+              <div className="relative h-6 rounded-full overflow-hidden bg-surface" style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}>
                 <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
                   style={{
                     width: totalVotes === 0 ? "0%" : `${yonseiPct}%`,
@@ -108,6 +108,24 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                   <span className="text-muted"> 승리</span>
                 </p>
               )}
+
+              {/* Compact stats row — replaces the two large detail cards in reveal mode */}
+              <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-3 text-left">
+                <div className="flex items-center gap-2">
+                  <img src="/yonsei-logo.png" alt="연세대" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted leading-none">출품 <span className="text-yonsei font-bold">{yonseiEntries.length}</span></p>
+                    <p className="text-[10px] text-muted leading-none mt-1">내 투표 <span className="text-foreground font-bold">{yonseiVotedCount}</span></p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <img src="/korea-logo.png" alt="고려대" className="w-6 h-6 object-contain shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted leading-none">출품 <span className="text-korea font-bold">{koreaEntries.length}</span></p>
+                    <p className="text-[10px] text-muted leading-none mt-1">내 투표 <span className="text-foreground font-bold">{koreaVotedCount}</span></p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -218,7 +236,8 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
         </defs>
       </svg>
 
-      {/* Detail cards - Liquid Glass */}
+      {/* Detail cards - Liquid Glass — hidden in reveal mode (data is folded into the hero above) */}
+      {!revealed && (
       <div className="grid grid-cols-2 gap-3 mt-6">
         <div
           className="liquid-glass-card relative rounded-3xl p-4 animate-card-rise overflow-hidden"
@@ -296,6 +315,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
           </div>
         </div>
       </div>
+      )}
 
       {/* Ranking */}
       <div className="mt-6 animate-card-rise" style={{ animationDelay: "0.4s" }}>
@@ -307,33 +327,27 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
           <div className="pb-28">
             <p className="text-[11px] text-muted mb-4">{totalVotes.toLocaleString()}명이 선택한 단 10장. 나머지는 잠겨 있어요.</p>
 
-            {/* #1 — full-width hero card */}
-            {sortedByVotes.slice(0, 1).map((entry) => (
-              <TopCard
-                key={entry.id}
-                entry={entry}
-                rank={1}
-                variant="hero"
-                onPhotoClick={onPhotoClick}
-                onUnlock={() => openFakeDoor("inline_card_1")}
-              />
-            ))}
+            {/* TOP 1~3 — auto-scrolling horizontal carousel, all using the hero variant */}
+            <TopThreeCarousel
+              entries={sortedByVotes.slice(0, 3)}
+              onPhotoClick={onPhotoClick}
+              onUnlock={(rank) => openFakeDoor(`inline_card_${rank}`)}
+            />
 
-            {/* #2 ~ #10 — masonry: distribute by reading order (zigzag), heights free */}
-            {sortedByVotes.length > 1 && (() => {
-              const rest = sortedByVotes.slice(1, 10);
+            {/* #4 ~ #10 — masonry: distribute by reading order (zigzag), heights free */}
+            {sortedByVotes.length > 3 && (() => {
+              const rest = sortedByVotes.slice(3, 10);
               // Distribute by index parity: even indices -> left column, odd -> right
-              // This guarantees zigzag reading order: #2 left, #3 right, #4 left, ...
               const left = rest.filter((_, i) => i % 2 === 0);
               const right = rest.filter((_, i) => i % 2 === 1);
               const renderCard = (entry: PhotoEntry, idxInRest: number) => {
-                const rank = idxInRest + 2;
+                const rank = idxInRest + 4;
                 return (
                   <div key={entry.id} className="mb-3">
                     <TopCard
                       entry={entry}
                       rank={rank}
-                      variant={rank <= 3 ? "podium" : "grid"}
+                      variant="grid"
                       onPhotoClick={onPhotoClick}
                       onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
                     />
@@ -341,7 +355,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                 );
               };
               return (
-                <div className="mt-3 flex gap-3">
+                <div className="mt-4 flex gap-3">
                   <div className="flex-1 min-w-0">
                     {left.map((entry) => renderCard(entry, rest.indexOf(entry)))}
                   </div>
@@ -505,8 +519,11 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
         const cardAspect = useFill ? maxCardAspect : imgAspect;
         const src = entry.thumb_url || entry.image_url;
         return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onPhotoClick(entry)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onPhotoClick(entry); }}
         className="relative w-full block cursor-pointer active:opacity-95 transition-opacity overflow-hidden"
         style={{ aspectRatio: `${cardAspect}` }}
       >
@@ -614,23 +631,178 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
             )}
           </div>
 
-          {/* Unlock CTA — overlaid inside the photo area */}
+          {/* Unlock CTA — plain inline text inside the overlay, no button chrome */}
           <button
             onClick={(e) => { e.stopPropagation(); onUnlock(); }}
-            className={`mt-2.5 w-full ${isHero ? "py-2.5" : "py-2"} text-[#ffd166] font-bold rounded-xl border border-[#ffd166]/30 bg-black/40 hover:bg-black/55 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none ${isHero ? "text-[12px]" : "text-[10px]"}`}
-            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
+            className={`mt-2.5 inline-flex items-center gap-1 text-[#ffd166] font-bold cursor-pointer hover:text-yellow-200 transition-colors leading-none ${isHero ? "text-[12px]" : "text-[10px]"}`}
           >
-            <svg width={isHero ? 12 : 10} height={isHero ? 12 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
+            <svg width={isHero ? 11 : 9} height={isHero ? 11 : 9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
-            <span className="leading-none">TOP 10 비밀 전부 열기</span>
-            <span className="leading-none ml-0.5 opacity-90">· ₩990</span>
+            <span className="leading-none underline underline-offset-2 decoration-[#ffd166]/40">
+              ₩990 · 비밀 전부 열기
+            </span>
           </button>
         </div>
-      </button>
+      </div>
         );
       })()}
+    </div>
+  );
+}
+
+interface TopThreeCarouselProps {
+  entries: PhotoEntry[];
+  onPhotoClick: (entry: PhotoEntry) => void;
+  onUnlock: (rank: number) => void;
+}
+
+function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const userInteractingRef = useRef(false);
+  const resumeTimerRef = useRef<number | null>(null);
+  const settleTimerRef = useRef<number | null>(null);
+
+  // Duplicate 3x so user can swipe both directions and auto loop never runs out
+  const loopEntries = entries.length > 0 ? [...entries, ...entries, ...entries] : [];
+  const middleStart = entries.length;
+
+  // Smoothly scroll a given loop index to the horizontal center of the container
+  const scrollToIdx = (loopIdx: number, smooth = true) => {
+    const el = scrollRef.current;
+    const card = cardRefs.current[loopIdx];
+    if (!el || !card) return;
+    const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+    const target = cardCenter - el.clientWidth / 2;
+    el.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
+  };
+
+  // Center the first card of the middle copy on mount
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const id = requestAnimationFrame(() => {
+      scrollToIdx(middleStart, false);
+      setActiveIdx(middleStart);
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries.length]);
+
+  // Auto-advance every 1.5s. Uses setInterval (not rAF) so it does not depend
+  // on page scroll / focus. Pauses while the user is touching the carousel.
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const interval = window.setInterval(() => {
+      if (userInteractingRef.current) return;
+      setActiveIdx((prev) => {
+        let next = prev + 1;
+        // Wrap: when reaching the third copy, jump back to the same offset in the middle copy
+        if (next >= middleStart * 2 + entries.length) {
+          next = middleStart + (next % entries.length);
+          // Snap the scroll position back without animation, then animate to next
+          requestAnimationFrame(() => {
+            scrollToIdx(next - 1, false);
+            scrollToIdx(next, true);
+          });
+          return next;
+        }
+        scrollToIdx(next, true);
+        return next;
+      });
+    }, 1500);
+    return () => window.clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries.length]);
+
+  // Pointer / touch interaction: pause auto-advance, then snap to nearest card on release
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const pause = () => {
+      userInteractingRef.current = true;
+      if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+    };
+
+    const findNearestIdx = () => {
+      const center = el.scrollLeft + el.clientWidth / 2;
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      cardRefs.current.forEach((card, i) => {
+        if (!card) return;
+        const c = card.offsetLeft + card.offsetWidth / 2;
+        const dist = Math.abs(c - center);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestIdx = i;
+        }
+      });
+      return bestIdx;
+    };
+
+    const scheduleResume = () => {
+      if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      // Wait for momentum scroll to settle, then snap to nearest
+      settleTimerRef.current = window.setTimeout(() => {
+        const nearest = findNearestIdx();
+        // Normalize back into the middle copy so we have room to drift
+        const normalized = middleStart + (nearest % entries.length);
+        setActiveIdx(normalized);
+        scrollToIdx(normalized, true);
+        userInteractingRef.current = false;
+      }, 250);
+    };
+
+    el.addEventListener("pointerdown", pause);
+    el.addEventListener("touchstart", pause, { passive: true });
+    el.addEventListener("pointerup", scheduleResume);
+    el.addEventListener("pointercancel", scheduleResume);
+    el.addEventListener("touchend", scheduleResume);
+    el.addEventListener("touchcancel", scheduleResume);
+
+    return () => {
+      el.removeEventListener("pointerdown", pause);
+      el.removeEventListener("touchstart", pause);
+      el.removeEventListener("pointerup", scheduleResume);
+      el.removeEventListener("pointercancel", scheduleResume);
+      el.removeEventListener("touchend", scheduleResume);
+      el.removeEventListener("touchcancel", scheduleResume);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries.length]);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div
+      ref={scrollRef}
+      className="flex gap-3 overflow-x-auto hide-scrollbar -mx-4 px-[12%]"
+      style={{ scrollBehavior: "auto", scrollSnapType: "none", WebkitOverflowScrolling: "touch" }}
+    >
+      {loopEntries.map((entry, i) => {
+        const rank = (i % entries.length) + 1;
+        return (
+          <div
+            key={`${entry.id}-${i}`}
+            ref={(el) => { cardRefs.current[i] = el; }}
+            className="shrink-0 w-[76%] max-w-[300px] transition-transform duration-300"
+            style={{ transform: i === activeIdx ? "scale(1)" : "scale(0.92)", opacity: i === activeIdx ? 1 : 0.55 }}
+          >
+            <TopCard
+              entry={entry}
+              rank={rank}
+              variant="hero"
+              onPhotoClick={onPhotoClick}
+              onUnlock={() => onUnlock(rank)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
