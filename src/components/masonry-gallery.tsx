@@ -431,7 +431,39 @@ export function MasonryGallery() {
         });
 
         scores.sort((a, b) => b.score - a.score);
-        return scores.map((s) => s.entry);
+        const sortedAll = scores.map((s) => s.entry);
+
+        // School fairness: interleave by stride scheduling when filter is "all"
+        // Each school maintains its internal ranking; output proportionally mixes them
+        if (filter === "all") {
+          const korea = sortedAll.filter((e) => e.school === "korea");
+          const yonsei = sortedAll.filter((e) => e.school === "yonsei");
+          if (korea.length === 0 || yonsei.length === 0) return sortedAll;
+
+          const total = korea.length + yonsei.length;
+          const koreaStep = total / korea.length;
+          const yonseiStep = total / yonsei.length;
+          let kCounter = koreaStep;
+          let yCounter = yonseiStep;
+          let kIdx = 0;
+          let yIdx = 0;
+          const result: PhotoEntry[] = [];
+          while (kIdx < korea.length || yIdx < yonsei.length) {
+            if (yIdx >= yonsei.length) { result.push(korea[kIdx++]); continue; }
+            if (kIdx >= korea.length) { result.push(yonsei[yIdx++]); continue; }
+            // Pick the school with smaller counter (more "due")
+            if (kCounter <= yCounter) {
+              result.push(korea[kIdx++]);
+              kCounter += koreaStep;
+            } else {
+              result.push(yonsei[yIdx++]);
+              yCounter += yonseiStep;
+            }
+          }
+          return result;
+        }
+
+        return sortedAll;
       }
       case "random":
       default: {
