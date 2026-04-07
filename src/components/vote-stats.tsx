@@ -505,16 +505,26 @@ function LockIcon({ name }: { name: LockIconKey }) {
   }
 }
 
+// Different placeholder text per icon so blurred lengths look organic
+const OVERLAY_PLACEHOLDERS: Record<LockIconKey, string> = {
+  pin: "고려대 서울캠퍼스 본관 앞",
+  camera: "Sony A7C II",
+  lens: "35mm F1.4 GM",
+  settings: "f/1.8 · 1/250s · ISO 400",
+  edit: "VSCO A6",
+  quote: "이 한 컷을 위해 세 번을 갔어요",
+};
+
 function OverlayLockedRow({ icon, label }: { icon: LockIconKey; label: string }) {
   return (
     <div className="flex items-center gap-1.5 text-[9px] leading-none">
       <span className="text-white/70 shrink-0"><LockIcon name={icon} /></span>
       <span className="text-white/60 font-semibold w-9 shrink-0">{label}</span>
       <span
-        className="flex-1 truncate text-white/80"
+        className="truncate text-white/80 max-w-[60%]"
         style={{ filter: "blur(4px)", WebkitFilter: "blur(4px)" }}
       >
-        잠긴 정보
+        {OVERLAY_PLACEHOLDERS[icon]}
       </span>
     </div>
   );
