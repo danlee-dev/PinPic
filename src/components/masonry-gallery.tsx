@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
-import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto } from "@/lib/api";
+import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { useAuth } from "./auth-provider";
@@ -146,6 +146,7 @@ export function MasonryGallery() {
   const [sortBy, setSortBy] = useState<"recommended" | "random" | "latest">("recommended");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+  const [voteTimes, setVoteTimes] = useState<Map<string, number[]>>(new Map());
   const [activeTab, setActiveTabState] = useState<Tab>("feed");
   const setActiveTab = useCallback((tab: Tab) => {
     setActiveTabState(tab);
@@ -245,6 +246,7 @@ export function MasonryGallery() {
   // Initial load
   useEffect(() => {
     loadMore();
+    fetchAllVoteTimes().then(setVoteTimes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -266,6 +268,7 @@ export function MasonryGallery() {
         fetchPhotos(0, 100).then((fresh) => {
           if (fresh.length > 0) setEntries(fresh);
         });
+        fetchAllVoteTimes().then(setVoteTimes);
       })
       .subscribe();
 
@@ -357,13 +360,51 @@ export function MasonryGallery() {
             : 0.3 + 0.7 * (votes / Math.max(qualityThreshold, 1));
           const exploration = rawExploration * qualityGate;
 
-          // 4) Velocity Penalty: two-tier (mild at 10/hr, heavy at 20/hr)
-          const velocity = votes / ageHours;
-          let velocityPenalty = 1.0;
-          if (velocity > 20) {
-            velocityPenalty = 0.5 / (1 + Math.log2(velocity / 20));
-          } else if (velocity > 10) {
-            velocityPenalty = 1.0 - 0.5 * ((velocity - 10) / 10);
+          // 4) Peak Velocity Penalty: based on highest 1-hour vote burst (persistent)
+          // Recovers as photo accumulates "normal-paced" votes over time
+          const times = (voteTimes.get(entry.id) || []).slice().sort((a, b) => a - b);
+          let peakVelocity = 0;
+          let peakEndIdx = -1;
+          // Sliding 1-hour window: find max votes within any 1-hour span
+          for (let i = 0; i < times.length; i++) {
+            let count = 1;
+            for (let j = i + 1; j < times.length; j++) {
+              if (times[j] - times[i] <= 3600 * 1000) count++;
+              else break;
+            }
+            if (count > peakVelocity) {
+              peakVelocity = count;
+              peakEndIdx = i + count - 1;
+            }
+          }
+
+          // Base penalty from peak (two-tier)
+          let basePenalty = 1.0;
+          if (peakVelocity > 20) {
+            basePenalty = 0.5 / (1 + Math.log2(peakVelocity / 20));
+          } else if (peakVelocity > 10) {
+            basePenalty = 1.0 - 0.5 * ((peakVelocity - 10) / 10);
+          }
+
+          // Recovery: count "normal-paced" votes after peak
+          // Normal pace = no 1-hour window after peak exceeds 10 votes
+          let velocityPenalty = basePenalty;
+          if (basePenalty < 1.0 && peakEndIdx >= 0) {
+            const postPeakTimes = times.slice(peakEndIdx + 1);
+            let normalVotesSincePeak = 0;
+            for (let i = 0; i < postPeakTimes.length; i++) {
+              // Check if this vote is part of a >10/hr burst
+              let burstCount = 1;
+              for (let j = i + 1; j < postPeakTimes.length; j++) {
+                if (postPeakTimes[j] - postPeakTimes[i] <= 3600 * 1000) burstCount++;
+                else break;
+              }
+              if (burstCount <= 10) normalVotesSincePeak++;
+            }
+            // Recovery threshold scales with platform average
+            const recoveryThreshold = Math.max(avgVotes * 3, 10);
+            const recoveryRate = Math.min(normalVotesSincePeak / recoveryThreshold, 1.0);
+            velocityPenalty = basePenalty + (1 - basePenalty) * recoveryRate;
           }
 
           // 5) Personalization: demote already-voted photos
@@ -399,7 +440,7 @@ export function MasonryGallery() {
         return arr;
       }
     }
-  }, [uniqueEntries, filter, sortBy, searchQuery, votedIds]);
+  }, [uniqueEntries, filter, sortBy, searchQuery, votedIds, voteTimes]);
 
   return (
     <>

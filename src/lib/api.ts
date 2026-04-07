@@ -42,6 +42,35 @@ export async function fetchPhotos(
   return (data as PhotoWithVotesRow[]).map(toPhotoEntry);
 }
 
+export async function fetchAllVoteTimes(): Promise<Map<string, number[]>> {
+  const supabase = getSupabase();
+  const all: { photo_id: string; created_at: string }[] = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from("votes")
+      .select("photo_id, created_at")
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error("Failed to fetch vote times:", error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  const map = new Map<string, number[]>();
+  for (const v of all) {
+    const arr = map.get(v.photo_id) || [];
+    arr.push(new Date(v.created_at).getTime());
+    map.set(v.photo_id, arr);
+  }
+  return map;
+}
+
 export async function fetchMyVotedIds(): Promise<Set<string>> {
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
