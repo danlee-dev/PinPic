@@ -319,35 +319,23 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
               />
             ))}
 
-            {/* #2, #3 — two-column emphasized */}
+            {/* #2 ~ #10 — true masonry: column-flow so heights are not aligned */}
             {sortedByVotes.length > 1 && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                {sortedByVotes.slice(1, 3).map((entry, i) => (
-                  <TopCard
-                    key={entry.id}
-                    entry={entry}
-                    rank={i + 2}
-                    variant="podium"
-                    onPhotoClick={onPhotoClick}
-                    onUnlock={() => openFakeDoor(`inline_card_${i + 2}`)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* #4 ~ #10 — compact two-column grid */}
-            {sortedByVotes.length > 3 && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                {sortedByVotes.slice(3, 10).map((entry, i) => (
-                  <TopCard
-                    key={entry.id}
-                    entry={entry}
-                    rank={i + 4}
-                    variant="grid"
-                    onPhotoClick={onPhotoClick}
-                    onUnlock={() => openFakeDoor(`inline_card_${i + 4}`)}
-                  />
-                ))}
+              <div className="mt-3 [column-count:2] [column-gap:0.75rem]">
+                {sortedByVotes.slice(1, 10).map((entry, i) => {
+                  const rank = i + 2;
+                  return (
+                    <div key={entry.id} className="mb-3 break-inside-avoid">
+                      <TopCard
+                        entry={entry}
+                        rank={rank}
+                        variant={rank <= 3 ? "podium" : "grid"}
+                        onPhotoClick={onPhotoClick}
+                        onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
