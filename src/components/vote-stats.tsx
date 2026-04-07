@@ -560,7 +560,8 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
       </div>
       <button
         onClick={onUnlock}
-        className="w-full py-3 text-[11px] font-semibold text-foreground/80 hover:bg-white/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none"
+        className="w-full py-3 text-[11px] font-bold text-[#ffd166] hover:bg-yellow-300/5 border-t border-yellow-300/15 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none"
+        style={{ background: "rgba(255,209,102,0.04)" }}
       >
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
