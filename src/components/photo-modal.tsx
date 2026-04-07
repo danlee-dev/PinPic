@@ -330,24 +330,45 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
       </div>
 
       {showAdGate && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-modal-overlay-in" onClick={() => setShowAdGate(false)}>
-          <div className="bg-card rounded-3xl p-6 max-w-xs w-full text-center border border-white/10 animate-modal-in"
-            style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}
-            onClick={(e) => e.stopPropagation()}>
-            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #ffd700 0%, #ff8a00 100%)" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="23 7 16 12 23 17 23 7" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-modal-overlay-in" onClick={() => setShowAdGate(false)}>
+          <div
+            className="relative bg-card rounded-[28px] px-7 pt-8 pb-6 max-w-[320px] w-full border border-white/8 animate-modal-in overflow-hidden"
+            style={{ boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.05) inset" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Subtle corner glow */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-40 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, rgba(255,200,100,0.25) 0%, transparent 70%)" }} />
+
+            {/* Small label badge */}
+            <div className="relative flex justify-center mb-5">
+              <span className="text-[10px] font-semibold tracking-[0.15em] text-muted/90 uppercase px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.03]">
+                Coming soon
+              </span>
+            </div>
+
+            {/* Clean lined icon, no gradient box */}
+            <div className="relative flex justify-center mb-5">
+              <svg width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/85">
+                <path d="M6 14a3 3 0 013-3h6l3-4h12l3 4h6a3 3 0 013 3v22a3 3 0 01-3 3H9a3 3 0 01-3-3V14z" />
+                <circle cx="24" cy="25" r="8" />
+                <circle cx="24" cy="25" r="3" />
+                <circle cx="38" cy="16" r="0.8" fill="currentColor" />
               </svg>
             </div>
-            <h3 className="text-base font-bold mb-1">준비 중입니다</h3>
-            <p className="text-xs text-muted mb-4">광고 시청 기능이 곧 추가됩니다.<br />조금만 기다려주세요!</p>
+
+            <h3 className="relative text-[17px] font-bold text-center tracking-tight mb-2">
+              카메라 설정값 공개 준비 중
+            </h3>
+            <p className="relative text-[12px] text-muted text-center leading-relaxed mb-6">
+              작가가 사용한 조리개, 셔터스피드, ISO 등<br />
+              촬영 설정 정보가 곧 공개될 예정이에요.
+            </p>
+
             <button
               onClick={() => setShowAdGate(false)}
-              className="w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl cursor-pointer active:scale-[0.97] transition-all"
+              className="relative w-full py-3 bg-white/[0.06] hover:bg-white/[0.1] text-foreground text-[13px] font-semibold rounded-2xl cursor-pointer active:scale-[0.97] transition-all border border-white/10"
             >
-              확인
+              알겠어요
             </button>
           </div>
         </div>
