@@ -111,7 +111,15 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
         {step === "pitch" && (
           <>
             <div className="relative flex justify-center mb-5 mt-1">
-              <span className="text-[10px] font-semibold tracking-[0.15em] text-yellow-300/90 uppercase px-2.5 py-1 rounded-full border border-yellow-300/20 bg-yellow-300/[0.04]">
+              <span
+                className="text-[10px] font-semibold tracking-[0.15em] text-white/90 uppercase px-2.5 py-1 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)) padding-box, " +
+                    "linear-gradient(135deg, #1a6dff 0%, rgba(255,255,255,0.2) 50%, #e8193e 100%) border-box",
+                  border: "1px solid transparent",
+                }}
+              >
                 Coming soon
               </span>
             </div>
@@ -141,10 +149,10 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
 
             <button
               onClick={handleStartEmail}
-              className="relative w-full py-3.5 rounded-2xl text-[14px] font-bold text-black cursor-pointer active:scale-[0.97] transition-all"
+              className="relative w-full py-3.5 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all"
               style={{
-                background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-                boxShadow: "0 6px 20px rgba(255,170,0,0.35)",
+                background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
+                boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
               }}
             >
               990원에 사전신청 하기
@@ -189,10 +197,10 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className="relative w-full mt-3 py-3.5 rounded-2xl text-[14px] font-bold text-black cursor-pointer active:scale-[0.97] transition-all disabled:opacity-60"
+              className="relative w-full mt-3 py-3.5 rounded-2xl text-[14px] font-bold text-white cursor-pointer active:scale-[0.97] transition-all disabled:opacity-60"
               style={{
-                background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-                boxShadow: "0 6px 20px rgba(255,170,0,0.35)",
+                background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
+                boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
               }}
             >
               {submitting ? "신청 중..." : "사전 신청 완료"}
@@ -216,7 +224,7 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
             </h3>
             {position !== null && (
               <p className="relative text-[13px] text-muted text-center mb-1">
-                당신은 <span className="text-yellow-300 font-bold">#{position}</span>번째 얼리버드예요
+                당신은 <span className="text-white font-bold">{position}</span>번째 얼리버드예요
               </p>
             )}
             <p className="relative text-[12px] text-muted/80 text-center mb-6 leading-relaxed">

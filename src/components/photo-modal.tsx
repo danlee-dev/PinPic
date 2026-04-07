@@ -308,10 +308,10 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
               <button
                 onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); }}
-                className="relative w-full py-3.5 rounded-2xl text-sm font-bold text-black overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
+                className="relative w-full py-3.5 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
                 style={{
-                  background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-                  boxShadow: "0 6px 20px rgba(255,170,0,0.35)",
+                  background: "linear-gradient(135deg, #1a6dff 0%, #6b1f8a 50%, #e8193e 100%)",
+                  boxShadow: "0 6px 20px rgba(26,109,255,0.25), 0 6px 20px rgba(232,25,62,0.25)",
                 }}
               >
                 <span className="flex items-center justify-between gap-2 px-2">

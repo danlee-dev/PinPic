@@ -407,11 +407,13 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
         <div className="fixed inset-x-0 bottom-24 z-30 flex justify-center px-4 pointer-events-none">
           <button
             onClick={() => openFakeDoor("sticky_bar")}
-            className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-[#ffd166] font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
+            className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
             style={{
-              background: "rgba(0,0,0,0.7)",
-              border: "1px solid rgba(255,209,102,0.35)",
-              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,209,102,0.08) inset",
+              background:
+                "linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)) padding-box, " +
+                "linear-gradient(135deg, #1a6dff 0%, rgba(255,255,255,0.15) 50%, #e8193e 100%) border-box",
+              border: "1.5px solid transparent",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 6px 18px rgba(26,109,255,0.18), 0 6px 18px rgba(232,25,62,0.18)",
               backdropFilter: "blur(8px)",
               WebkitBackdropFilter: "blur(8px)",
             }}
@@ -631,18 +633,23 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
             )}
           </div>
 
-          {/* Unlock CTA — plain inline text inside the overlay, no button chrome */}
+          {/* Unlock CTA — centered plain inline text on the photo, no chrome */}
           <button
             onClick={(e) => { e.stopPropagation(); onUnlock(); }}
-            className={`mt-2.5 inline-flex items-center gap-1 text-[#ffd166] font-bold cursor-pointer hover:text-yellow-200 transition-colors leading-none ${isHero ? "text-[12px]" : "text-[10px]"}`}
+            className={`mt-3 mx-auto flex items-center justify-center gap-1.5 font-bold cursor-pointer hover:opacity-90 transition-opacity leading-none w-full ${isHero ? "text-[12px]" : "text-[10px]"}`}
+            style={{
+              color: "transparent",
+              backgroundImage: "linear-gradient(135deg, #6aa3ff 0%, #ffffff 50%, #ff5b78 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))",
+            }}
           >
-            <svg width={isHero ? 11 : 9} height={isHero ? 11 : 9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
+            <svg width={isHero ? 11 : 9} height={isHero ? 11 : 9} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block" style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))" }}>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
-            <span className="leading-none underline underline-offset-2 decoration-[#ffd166]/40">
-              ₩990 · 비밀 전부 열기
-            </span>
+            <span className="leading-none">TOP 10 비밀 전부 열기 · ₩990</span>
           </button>
         </div>
       </div>
@@ -666,53 +673,39 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
   const resumeTimerRef = useRef<number | null>(null);
   const settleTimerRef = useRef<number | null>(null);
 
-  // Duplicate 3x so user can swipe both directions and auto loop never runs out
-  const loopEntries = entries.length > 0 ? [...entries, ...entries, ...entries] : [];
-  const middleStart = entries.length;
-
-  // Smoothly scroll a given loop index to the horizontal center of the container
-  const scrollToIdx = (loopIdx: number, smooth = true) => {
+  // Smoothly scroll a given index to the horizontal center of the container
+  const scrollToIdx = (idx: number, smooth = true) => {
     const el = scrollRef.current;
-    const card = cardRefs.current[loopIdx];
+    const card = cardRefs.current[idx];
     if (!el || !card) return;
     const cardCenter = card.offsetLeft + card.offsetWidth / 2;
     const target = cardCenter - el.clientWidth / 2;
     el.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
   };
 
-  // Center the first card of the middle copy on mount
+  // Center the first card on mount
   useEffect(() => {
     if (entries.length === 0) return;
     const id = requestAnimationFrame(() => {
-      scrollToIdx(middleStart, false);
-      setActiveIdx(middleStart);
+      scrollToIdx(0, false);
+      setActiveIdx(0);
     });
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries.length]);
 
-  // Auto-advance every 1.5s. Uses setInterval (not rAF) so it does not depend
-  // on page scroll / focus. Pauses while the user is touching the carousel.
+  // Auto-advance every 2.5s: 1 → 2 → 3 → 1 → 2 → 3 → ...
+  // After the last card, jump straight back to the first.
   useEffect(() => {
     if (entries.length === 0) return;
     const interval = window.setInterval(() => {
       if (userInteractingRef.current) return;
       setActiveIdx((prev) => {
-        let next = prev + 1;
-        // Wrap: when reaching the third copy, jump back to the same offset in the middle copy
-        if (next >= middleStart * 2 + entries.length) {
-          next = middleStart + (next % entries.length);
-          // Snap the scroll position back without animation, then animate to next
-          requestAnimationFrame(() => {
-            scrollToIdx(next - 1, false);
-            scrollToIdx(next, true);
-          });
-          return next;
-        }
+        const next = (prev + 1) % entries.length;
         scrollToIdx(next, true);
         return next;
       });
-    }, 1500);
+    }, 2500);
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries.length]);
@@ -747,13 +740,10 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
     const scheduleResume = () => {
       if (resumeTimerRef.current) window.clearTimeout(resumeTimerRef.current);
       if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
-      // Wait for momentum scroll to settle, then snap to nearest
       settleTimerRef.current = window.setTimeout(() => {
         const nearest = findNearestIdx();
-        // Normalize back into the middle copy so we have room to drift
-        const normalized = middleStart + (nearest % entries.length);
-        setActiveIdx(normalized);
-        scrollToIdx(normalized, true);
+        setActiveIdx(nearest);
+        scrollToIdx(nearest, true);
         userInteractingRef.current = false;
       }, 250);
     };
@@ -784,11 +774,11 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
       className="flex gap-3 overflow-x-auto hide-scrollbar -mx-4 px-[12%]"
       style={{ scrollBehavior: "auto", scrollSnapType: "none", WebkitOverflowScrolling: "touch" }}
     >
-      {loopEntries.map((entry, i) => {
-        const rank = (i % entries.length) + 1;
+      {entries.map((entry, i) => {
+        const rank = i + 1;
         return (
           <div
-            key={`${entry.id}-${i}`}
+            key={entry.id}
             ref={(el) => { cardRefs.current[i] = el; }}
             className="shrink-0 w-[76%] max-w-[300px] transition-transform duration-300"
             style={{ transform: i === activeIdx ? "scale(1)" : "scale(0.92)", opacity: i === activeIdx ? 1 : 0.55 }}
