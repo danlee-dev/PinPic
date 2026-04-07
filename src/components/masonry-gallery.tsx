@@ -346,7 +346,7 @@ export function MasonryGallery() {
             ? now - new Date(entry.created_at).getTime()
             : 7 * 24 * 3600 * 1000;
           const ageHours = Math.max(ageMs / (1000 * 3600), 1);
-          const halfLife = 12;
+          const halfLife = 24;
           const timeBoost = Math.pow(2, -ageHours / halfLife);
 
           // 3) Exploration Bonus with quality gate

@@ -50,13 +50,13 @@ lower_bound = (p + z^2/2n - z * sqrt(p(1-p)/n + z^2/4n^2)) / (1 + z^2/n)
 ```
 age_hours = (현재시각 - 업로드시각) / 3600000
 time_boost = 2^(-age_hours / half_life)
-half_life = 12시간
+half_life = 24시간
 ```
 
 - 업로드 직후: time_boost = 1.0 (최대)
-- 12시간 후: time_boost = 0.5
-- 24시간 후: time_boost = 0.25
-- 48시간 후: time_boost = 0.0625
+- 24시간 후: time_boost = 0.5
+- 48시간 후: time_boost = 0.25
+- 72시간 후: time_boost = 0.125
 
 이 방식으로 새 사진은 약 12~24시간 동안 상위 노출 부스트를 받고, 이후에는 자연스럽게 Wilson Score와 탐색 보너스에 의한 경쟁으로 전환된다.
 
