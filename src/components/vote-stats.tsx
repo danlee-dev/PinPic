@@ -59,15 +59,14 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
       {revealed && (
         <div className="relative rounded-3xl pt-7 pb-5 px-5 mb-5 overflow-hidden animate-card-rise"
           style={{
-            background: "linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(10,10,10,0.92) 50%, rgba(255,138,0,0.08) 100%)",
+            background: "linear-gradient(135deg, rgba(26,109,255,0.10) 0%, rgba(10,10,10,0.92) 40%, rgba(10,10,10,0.92) 60%, rgba(232,25,62,0.10) 100%)",
           }}
         >
           <ConfettiBurst trigger={confettiKey} />
-          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ border: "1px solid rgba(255,215,0,0.18)" }} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #ffd700 0%, transparent 70%)" }} />
+          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.08)" }} />
 
           <div className="relative text-center">
-            <p className="text-[11px] font-bold tracking-[0.2em] text-yellow-300/90 uppercase mb-1">Hall of Fame</p>
+            <p className="text-[11px] font-bold tracking-[0.2em] text-foreground/60 uppercase mb-1">Hall of Fame</p>
             <h2 className="text-3xl font-black tracking-tight mb-1">명예의 전당</h2>
             <p className="text-xs text-muted mb-4">제1회 캠퍼스 사진 고연전 결과 발표</p>
 
@@ -319,25 +318,38 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
               />
             ))}
 
-            {/* #2 ~ #10 — true masonry: column-flow so heights are not aligned */}
-            {sortedByVotes.length > 1 && (
-              <div className="mt-3 [column-count:2] [column-gap:0.75rem]">
-                {sortedByVotes.slice(1, 10).map((entry, i) => {
-                  const rank = i + 2;
-                  return (
-                    <div key={entry.id} className="mb-3 break-inside-avoid">
-                      <TopCard
-                        entry={entry}
-                        rank={rank}
-                        variant={rank <= 3 ? "podium" : "grid"}
-                        onPhotoClick={onPhotoClick}
-                        onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {/* #2 ~ #10 — masonry: distribute by reading order (zigzag), heights free */}
+            {sortedByVotes.length > 1 && (() => {
+              const rest = sortedByVotes.slice(1, 10);
+              // Distribute by index parity: even indices -> left column, odd -> right
+              // This guarantees zigzag reading order: #2 left, #3 right, #4 left, ...
+              const left = rest.filter((_, i) => i % 2 === 0);
+              const right = rest.filter((_, i) => i % 2 === 1);
+              const renderCard = (entry: PhotoEntry, idxInRest: number) => {
+                const rank = idxInRest + 2;
+                return (
+                  <div key={entry.id} className="mb-3">
+                    <TopCard
+                      entry={entry}
+                      rank={rank}
+                      variant={rank <= 3 ? "podium" : "grid"}
+                      onPhotoClick={onPhotoClick}
+                      onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
+                    />
+                  </div>
+                );
+              };
+              return (
+                <div className="mt-3 flex gap-3">
+                  <div className="flex-1 min-w-0">
+                    {left.map((entry) => renderCard(entry, rest.indexOf(entry)))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {right.map((entry) => renderCard(entry, rest.indexOf(entry)))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <div className="relative">
@@ -382,8 +394,8 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
             onClick={() => openFakeDoor("sticky_bar")}
             className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-black font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-              boxShadow: "0 8px 28px rgba(255,170,0,0.4), 0 0 0 1px rgba(255,255,255,0.25) inset",
+              background: "#ffffff",
+              boxShadow: "0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15) inset",
             }}
           >
             <span className="flex items-center gap-2">
@@ -456,38 +468,40 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
   const isPodium = variant === "podium";
   const isGrid = variant === "grid";
 
-  // Subtle gold accent ONLY for #1; podium gets a hint of color via small medal text
-  const cardBorder = isHero
-    ? "1px solid rgba(255,200,90,0.4)"
-    : "1px solid rgba(255,255,255,0.07)";
-  const cardShadow = isHero
-    ? "0 12px 36px rgba(255,180,60,0.12), 0 4px 16px rgba(0,0,0,0.4)"
-    : "0 4px 14px rgba(0,0,0,0.3)";
-  const cardBg = isHero
-    ? "linear-gradient(180deg, rgba(255,200,90,0.05) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.02) 100%)"
-    : "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)";
-
-  const rankAccent =
-    rank === 1 ? "text-[#ffd166]" :
-    rank === 2 ? "text-[#d8d8e0]" :
-    rank === 3 ? "text-[#cd9270]" :
-    "text-foreground/55";
-
   return (
     <div
       className="relative rounded-3xl overflow-hidden"
-      style={{ border: cardBorder, boxShadow: cardShadow, background: cardBg }}
+      style={{
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
+        background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
+      }}
     >
-      {/* Hero card has a faint top hairline accent for #1 */}
-      {isHero && (
-        <div className="absolute inset-x-6 top-0 h-px pointer-events-none"
-          style={{ background: "linear-gradient(90deg, transparent 0%, rgba(255,210,120,0.5) 50%, transparent 100%)" }} />
-      )}
-
       {/* Header: rank + school + votes */}
       <div className={`flex items-center justify-between ${isHero ? "px-5 pt-4 pb-3" : "px-3.5 pt-3 pb-2"}`}>
         <div className="flex items-center gap-2 min-w-0">
-          <span className={`font-black ${rankAccent} ${isHero ? "text-[22px]" : isPodium ? "text-[18px]" : "text-[15px]"}`}>
+          {rank === 1 && (
+            <svg
+              width={isHero ? 22 : 16}
+              height={isHero ? 22 : 16}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-foreground shrink-0"
+              aria-label="1st place"
+            >
+              <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
+              <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
+              <path d="M4 22h16" />
+              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+              <path d="M18 2H6v7a6 6 0 0012 0V2z" />
+            </svg>
+          )}
+          <span className={`font-black text-foreground/85 ${isHero ? "text-[22px]" : isPodium ? "text-[18px]" : "text-[15px]"}`}>
             #{rank}
           </span>
           <span className={`font-bold uppercase tracking-wider truncate ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"} ${isHero ? "text-[11px]" : "text-[9px]"}`}>
@@ -513,30 +527,6 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
           className="w-full block"
           draggable={false}
         />
-        {isHero && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-black tracking-[0.15em]"
-            style={{
-              background: "rgba(0,0,0,0.65)",
-              color: "#ffd166",
-              border: "1px solid rgba(255,210,120,0.45)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            WINNER
-          </div>
-        )}
-        {isPodium && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[8px] font-black tracking-wider"
-            style={{
-              background: "rgba(0,0,0,0.6)",
-              color: rank === 2 ? "#d8d8e0" : "#cd9270",
-              border: `1px solid ${rank === 2 ? "rgba(216,216,224,0.35)" : "rgba(205,146,112,0.35)"}`,
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            {rank === 2 ? "2ND" : "3RD"}
-          </div>
-        )}
       </button>
 
       {/* Author */}
@@ -570,7 +560,7 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
       </div>
       <button
         onClick={onUnlock}
-        className="w-full py-3 text-[11px] font-semibold text-yellow-300 hover:bg-yellow-300/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+        className="w-full py-3 text-[11px] font-semibold text-foreground/80 hover:bg-white/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5"
       >
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
