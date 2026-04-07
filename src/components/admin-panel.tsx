@@ -21,6 +21,10 @@ import {
   RealVoteRow,
   fetchFakeDoorStats,
   FakeDoorStats,
+  fetchAnalyticsInsights,
+  AnalyticsInsights,
+  fetchResultStats,
+  ResultStats,
 } from "@/lib/admin";
 import { getRevealPreview, setRevealPreview } from "@/lib/reveal-preview";
 import { SchoolBadge } from "./school-badge";
@@ -98,7 +102,9 @@ export function AdminPanel() {
   const [engagement, setEngagement] = useState<EngagementStats | null>(null);
   const [originalRanking, setOriginalRanking] = useState<RealVoteRow[]>([]);
   const [fakeDoor, setFakeDoor] = useState<FakeDoorStats | null>(null);
-  const [clicksSubTab, setClicksSubTab] = useState<"vote" | "result">("vote");
+  const [insights, setInsights] = useState<AnalyticsInsights | null>(null);
+  const [resultStats, setResultStats] = useState<ResultStats | null>(null);
+  const [clicksSubTab, setClicksSubTab] = useState<"vote" | "result" | "analysis">("vote");
   const [photoPage, setPhotoPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
   const [photoSort, setPhotoSort] = useState<"views" | "rate">("views");
@@ -116,7 +122,7 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, ann, adm, eng, orig, fd] = await Promise.all([
+    const [p, all, vp, ann, adm, eng, orig, fd, ins, rs] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
@@ -125,6 +131,8 @@ export function AdminPanel() {
       fetchEngagementStats(),
       fetchOriginalRanking(),
       fetchFakeDoorStats(),
+      fetchAnalyticsInsights(),
+      fetchResultStats(),
     ]);
     setPending(p);
     setEngagement(eng);
@@ -134,6 +142,8 @@ export function AdminPanel() {
     setAdmins(adm);
     setOriginalRanking(orig);
     setFakeDoor(fd);
+    setInsights(ins);
+    setResultStats(rs);
     if (vp) {
       setEditStart(toKSTInput(vp.start));
       setEditEnd(toKSTInput(vp.end));
@@ -389,11 +399,12 @@ export function AdminPanel() {
 
       {tab === "clicks" && engagement && (
         <div className="space-y-4">
-          {/* Sub-segmented control: 투표 vs 결과 */}
+          {/* Sub-segmented control: 투표 / 결과 / 분석 */}
           <div className="flex gap-1 bg-surface rounded-xl p-1">
             {([
-              ["vote", "투표 (조회/스팟)"],
-              ["result", "결과 (페이크 도어)"],
+              ["vote", "투표"],
+              ["result", "결과"],
+              ["analysis", "분석"],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -571,78 +582,13 @@ export function AdminPanel() {
 
           </>)}
 
-          {/* Fake door clicks (result page CTA) */}
-          {clicksSubTab === "result" && fakeDoor && (
-            <>
-              <div className="bg-surface rounded-2xl p-4 border border-border/30 mt-4">
-                <h4 className="text-xs font-semibold text-muted mb-3">결과 페이크 도어 (TOP 10 비밀 전부 열기)</h4>
-                <div className="grid grid-cols-3 gap-3 text-center mb-3">
-                  <div>
-                    <p className="text-2xl font-black">{fakeDoor.total}</p>
-                    <p className="text-[10px] text-muted">총 클릭</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black">{fakeDoor.uniqueUsers}</p>
-                    <p className="text-[10px] text-muted">로그인 유저</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-black">{fakeDoor.uniqueAnon}</p>
-                    <p className="text-[10px] text-muted">비로그인</p>
-                  </div>
-                </div>
-              </div>
+          {/* Result-stage rich stats */}
+          {clicksSubTab === "result" && resultStats && (
+            <ResultStatsPanel stats={resultStats} />
+          )}
 
-              <div className="bg-surface rounded-2xl p-4 border border-border/30">
-                <h4 className="text-xs font-semibold text-muted mb-3">소스별 클릭</h4>
-                {fakeDoor.bySource.length === 0 ? (
-                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {fakeDoor.bySource.map((s) => (
-                      <div key={s.source} className="flex items-center justify-between text-xs py-1">
-                        <span className="font-mono text-muted truncate flex-1">{s.source}</span>
-                        <span className="font-bold ml-2">{s.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-surface rounded-2xl p-4 border border-border/30">
-                <h4 className="text-xs font-semibold text-muted mb-3">사진별 클릭 ({fakeDoor.byPhoto.length}개)</h4>
-                {fakeDoor.byPhoto.length === 0 ? (
-                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {fakeDoor.byPhoto.slice(0, 20).map((p) => (
-                      <div key={p.photo_id} className="flex items-center gap-2 py-1">
-                        <span className={`text-[10px] font-bold w-10 ${p.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
-                          {p.school === "yonsei" ? "연세대" : "고려대"}
-                        </span>
-                        <span className="text-xs flex-1 truncate">{p.nickname}</span>
-                        <span className="text-xs font-bold">{p.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-surface rounded-2xl p-4 border border-border/30">
-                <h4 className="text-xs font-semibold text-muted mb-3">사용자별 클릭 ({fakeDoor.byUser.length}명)</h4>
-                {fakeDoor.byUser.length === 0 ? (
-                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {fakeDoor.byUser.slice(0, 20).map((u) => (
-                      <div key={u.user_id} className="flex items-center gap-2 py-1">
-                        <span className="text-xs flex-1 truncate">{u.email}</span>
-                        <span className="text-xs font-bold">{u.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
+          {clicksSubTab === "analysis" && insights && (
+            <AnalysisPanel insights={insights} />
           )}
         </div>
       )}
@@ -889,4 +835,365 @@ function toKSTInput(utcStr: string): string {
 function formatKSTDisplay(utcStr: string): string {
   const d = new Date(utcStr);
   return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function ResultStatsPanel({ stats }: { stats: ResultStats }) {
+  const fmt = (n: number) => n.toLocaleString();
+  const pct = (n: number) => `${n.toFixed(1)}%`;
+  const t = stats.totals;
+
+  const PER_PAGE = 10;
+  const [photoPg, setPhotoPg] = useState(0);
+  const [userPg, setUserPg] = useState(0);
+  const [waitlistPg, setWaitlistPg] = useState(0);
+  const [recentPg, setRecentPg] = useState(0);
+
+  const photoSlice = stats.byPhoto.slice(photoPg * PER_PAGE, photoPg * PER_PAGE + PER_PAGE);
+  const userSlice = stats.byUser.slice(userPg * PER_PAGE, userPg * PER_PAGE + PER_PAGE);
+  const waitlistSlice = stats.recentWaitlist.slice(waitlistPg * PER_PAGE, waitlistPg * PER_PAGE + PER_PAGE);
+  const recentSlice = stats.recentClicks.slice(recentPg * PER_PAGE, recentPg * PER_PAGE + PER_PAGE);
+
+  const Card = ({ title, b, hint }: { title: string; b: ResultStats["totals"]["photoModalOpens"]; hint?: string }) => (
+    <div className="bg-surface rounded-2xl p-3 border border-border/30">
+      <p className="text-[10px] text-muted">{title}</p>
+      <p className="text-2xl font-black mt-1">{fmt(b.total)}</p>
+      <div className="mt-1 flex items-center gap-2 text-[9px] text-muted">
+        <span>로그인 <span className="text-foreground font-semibold">{b.loggedIn}</span></span>
+        <span>비로그인 <span className="text-foreground font-semibold">{b.anon}</span></span>
+        <span>유니크 <span className="text-foreground font-semibold">{b.uniqueLoggedIn}</span></span>
+      </div>
+      {hint && <p className="text-[9px] text-muted/70 mt-1">{hint}</p>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* 상단 요약 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-1">결과 발표 단계 한 줄 요약</h4>
+        <div className="grid grid-cols-2 gap-3 mt-2">
+          <div>
+            <p className="text-[10px] text-muted">전체 모달 → 사전신청 전환율</p>
+            <p className="text-2xl font-black">{pct(t.overallCR)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted">사전신청 누적</p>
+            <p className="text-2xl font-black">{fmt(t.waitlistRows.total)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 단계별 카운터 (로그인/비로그인 분리) */}
+      <div className="grid grid-cols-2 gap-3">
+        <Card title="사진 모달 열기" b={t.photoModalOpens} hint="피드 + 명예의 전당 합계" />
+        <Card title="페이크 도어 클릭" b={t.fakeDoorClicks} hint="모든 unlock 진입" />
+        <Card title="상단 CTA 클릭" b={t.inlineBarClicks} hint="명예의 전당 헤더" />
+        <Card title="990원 사전신청 클릭" b={t.pitchContinue} />
+        <Card title="이메일 제출 완료" b={t.emailSubmit} />
+        <Card title="waitlist 저장" b={t.waitlistRows} hint="중복 이메일 제외" />
+      </div>
+
+      {/* 진입 경로별 funnel */}
+      {stats.funnels.map((f, fi) => (
+        <div key={fi} className="bg-surface rounded-2xl p-4 border border-border/30">
+          <h4 className="text-xs font-bold mb-3">{f.label}</h4>
+          <div className="space-y-2">
+            {f.steps.map((s, i) => {
+              const max = f.steps[0].bucket.total || 1;
+              const w = (s.bucket.total / max) * 100;
+              const prev = i > 0 ? f.steps[i - 1].bucket.total : 0;
+              const cr = i > 0 && prev > 0 ? (s.bucket.total / prev) * 100 : null;
+              return (
+                <div key={i}>
+                  <div className="flex items-center justify-between text-[11px] mb-0.5">
+                    <span className="text-foreground/85">{s.label}</span>
+                    <span className="font-bold">
+                      {fmt(s.bucket.total)}
+                      <span className="text-muted ml-1 font-normal">
+                        (로 {s.bucket.loggedIn} · 비 {s.bucket.anon})
+                      </span>
+                      {cr !== null && (
+                        <span className={`ml-2 ${cr >= 30 ? "text-green-400" : cr >= 15 ? "text-yellow-400" : "text-red-400"}`}>
+                          {pct(cr)}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-yonsei to-korea" style={{ width: `${w}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {/* 사진별 (모달 열림 / 클릭 / 제출) */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-3">사진별 ({stats.byPhoto.length}개)</h4>
+        {stats.byPhoto.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (
+          <>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-[9px] text-muted/70 px-1">
+                <span className="w-9">학교</span>
+                <span className="flex-1">닉네임</span>
+                <span className="w-12 text-right">열림</span>
+                <span className="w-12 text-right">클릭</span>
+                <span className="w-12 text-right">제출</span>
+              </div>
+              {photoSlice.map((p) => (
+                <div key={p.photo_id} className="flex items-center gap-2 py-1 text-[11px]">
+                  <span className={`font-bold w-9 ${p.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                    {p.school === "yonsei" ? "연세대" : "고려대"}
+                  </span>
+                  <span className="flex-1 truncate">{p.nickname}</span>
+                  <span className="w-12 text-right text-muted">{p.opens}</span>
+                  <span className="w-12 text-right">{p.clicks}</span>
+                  <span className="w-12 text-right font-bold">{p.submits}</span>
+                </div>
+              ))}
+            </div>
+            <Pagination page={photoPg} totalPages={Math.ceil(stats.byPhoto.length / PER_PAGE)} onChange={setPhotoPg} />
+          </>
+        )}
+      </div>
+
+      {/* 사용자별 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-3">사용자별 ({stats.byUser.length}명, 로그인만)</h4>
+        {stats.byUser.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (
+          <>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-[9px] text-muted/70 px-1">
+                <span className="flex-1">이메일</span>
+                <span className="w-12 text-right">열림</span>
+                <span className="w-12 text-right">클릭</span>
+                <span className="w-12 text-right">제출</span>
+              </div>
+              {userSlice.map((u) => (
+                <div key={u.user_id} className="flex items-center gap-2 py-1 text-[11px]">
+                  <span className="flex-1 truncate">{u.email}</span>
+                  <span className="w-12 text-right text-muted">{u.opens}</span>
+                  <span className="w-12 text-right">{u.clicks}</span>
+                  <span className="w-12 text-right font-bold">{u.submits}</span>
+                </div>
+              ))}
+            </div>
+            <Pagination page={userPg} totalPages={Math.ceil(stats.byUser.length / PER_PAGE)} onChange={setUserPg} />
+          </>
+        )}
+      </div>
+
+      {/* 사전신청 (waitlist) */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-3">사전신청 이메일 ({stats.recentWaitlist.length})</h4>
+        {stats.recentWaitlist.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (
+          <>
+            <div className="space-y-1">
+              {waitlistSlice.map((w, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 text-[11px]">
+                  <span className="flex-1 truncate font-mono">{w.email}</span>
+                  <span className="text-[9px] text-muted truncate w-24 text-right">{w.source ?? "-"}</span>
+                  <span className="text-[9px] text-muted/70 whitespace-nowrap font-mono">{w.created_at.slice(5, 16).replace("T", " ")}</span>
+                </div>
+              ))}
+            </div>
+            <Pagination page={waitlistPg} totalPages={Math.ceil(stats.recentWaitlist.length / PER_PAGE)} onChange={setWaitlistPg} />
+          </>
+        )}
+      </div>
+
+      {/* 최근 클릭 raw */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-3">최근 페이크 도어 활동 ({stats.recentClicks.length})</h4>
+        {stats.recentClicks.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (
+          <>
+            <div className="space-y-1">
+              {recentSlice.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 py-1 text-[10px]">
+                  <span className="text-muted/70 font-mono whitespace-nowrap">{r.created_at.slice(5, 16).replace("T", " ")}</span>
+                  <span className="font-mono text-foreground/80 truncate flex-1">{r.source}</span>
+                  {r.nickname && <span className="text-muted truncate max-w-[80px]">{r.nickname}</span>}
+                  <span className={`text-[9px] font-bold whitespace-nowrap ${r.user_id ? "text-foreground" : "text-muted/60"}`}>
+                    {r.user_id ? "로그인" : "비로그인"}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <Pagination page={recentPg} totalPages={Math.ceil(stats.recentClicks.length / PER_PAGE)} onChange={setRecentPg} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AnalysisPanel({ insights }: { insights: AnalyticsInsights }) {
+  const fmt = (n: number) => n.toLocaleString();
+  const pct = (n: number) => `${n.toFixed(1)}%`;
+
+  const FunnelTable = ({ title, steps, hint }: { title: string; steps: AnalyticsInsights["feedFunnel"]; hint?: string }) => (
+    <div className="bg-surface rounded-2xl p-4 border border-border/30">
+      <h4 className="text-xs font-bold mb-1">{title}</h4>
+      {hint && <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">{hint}</p>}
+      <div className="space-y-1.5">
+        {steps.map((s, i) => {
+          const max = steps[0].count || 1;
+          const w = (s.count / max) * 100;
+          return (
+            <div key={i}>
+              <div className="flex items-center justify-between text-[11px] mb-0.5">
+                <span className="text-foreground/85">{s.label}</span>
+                <span className="font-bold">
+                  {fmt(s.count)}
+                  <span className="text-muted ml-1 font-normal">({fmt(s.uniqueUsers)}명)</span>
+                  {s.rate !== undefined && (
+                    <span className={`ml-2 ${s.rate >= 30 ? "text-green-400" : s.rate >= 15 ? "text-yellow-400" : "text-red-400"}`}>
+                      {pct(s.rate)}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-yonsei to-korea" style={{ width: `${w}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* 핵심 헤드라인 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-3">가설 검증 한 줄 요약</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[10px] text-muted">전체 모달 → 사전신청 전환율</p>
+            <p className="text-2xl font-black mt-1">{pct(insights.totals.overallCR)}</p>
+            <p className="text-[9px] text-muted/70 mt-0.5">CR ≥ 5% 이면 가설 강하게 지지</p>
+          </div>
+          <div>
+            <p className="text-[10px] text-muted">사전신청 누적</p>
+            <p className="text-2xl font-black mt-1">{fmt(insights.totals.waitlistSignups)}</p>
+            <p className="text-[9px] text-muted/70 mt-0.5">실측 WTP 신호 수</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 소스별 퍼널 */}
+      <FunnelTable
+        title="피드 진입 → 사전신청 퍼널"
+        hint="피드 탭에서 사진 클릭으로 모달을 연 사용자가 어디까지 진행하는지"
+        steps={insights.feedFunnel}
+      />
+      <FunnelTable
+        title="명예의 전당 진입 → 사전신청 퍼널"
+        hint="명예의 전당에서 사진 클릭으로 모달을 연 사용자의 흐름. 결과 컨텍스트가 WTP를 높이는지 비교"
+        steps={insights.hofFunnel}
+      />
+      <FunnelTable
+        title="명예의 전당 상단 CTA 직접 진입 퍼널"
+        hint="모달을 거치지 않고 페이지 상단의 큰 CTA 버튼에서 바로 시작한 사용자 흐름"
+        steps={insights.inlineBarFunnel}
+      />
+
+      {/* 코호트 비교 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-1">투표자 vs 비투표자 (로그인 사용자만)</h4>
+        <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">
+          익명 voter_id는 세션 fingerprint라 이 비교는 로그인 유저만 대상으로 합니다.
+        </p>
+        <div className="space-y-2">
+          {insights.cohorts.map((c) => (
+            <div key={c.label} className="flex items-center justify-between gap-2 py-1">
+              <span className="text-xs font-semibold flex-1">{c.label}</span>
+              <span className="text-[10px] text-muted">{fmt(c.users)}명</span>
+              <span className="text-[10px] text-muted">→ 클릭 {fmt(c.fakeDoorClickers)}</span>
+              <span className={`text-[11px] font-bold w-12 text-right ${c.rate >= 20 ? "text-green-400" : c.rate >= 10 ? "text-yellow-400" : "text-red-400"}`}>
+                {pct(c.rate)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted/70 mt-3 leading-relaxed">
+          투표자 클릭률이 비투표자보다 유의미하게 높으면 = 참여도와 WTP의 양의 상관관계.
+        </p>
+      </div>
+
+      {/* 사진별 퍼널 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-1">사진별 사전신청 자극도</h4>
+        <p className="text-[10px] text-muted/70 mb-3 leading-relaxed">
+          어떤 사진이 가장 사전신청 클릭을 유발했는지. 모달 열림 대비 비율이 가장 강력한 신호.
+        </p>
+        <div className="space-y-1.5">
+          {insights.topPhotos.slice(0, 15).map((p) => (
+            <div key={p.photo_id} className="flex items-center gap-2 py-1 text-[11px]">
+              <span className={`font-bold w-9 ${p.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                {p.school === "yonsei" ? "연세대" : "고려대"}
+              </span>
+              <span className="flex-1 truncate">{p.nickname}</span>
+              <span className="text-muted">열림 {p.modalOpens}</span>
+              <span className="text-muted">→ 클릭 {p.fakeDoorClicks}</span>
+              <span className="font-bold w-12 text-right">{pct(p.rate)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 시간대별 분포 */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-1">시간대별 활동 분포</h4>
+        <p className="text-[10px] text-muted/70 mb-3">결과 발표 시각 기준 피크 확인</p>
+        {insights.hourly.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (() => {
+          const max = Math.max(...insights.hourly.map((h) => h.opens), 1);
+          return (
+            <div className="space-y-1">
+              {insights.hourly.slice(-12).map((h) => (
+                <div key={h.hour} className="flex items-center gap-2 text-[10px]">
+                  <span className="font-mono text-muted/70 w-20 shrink-0">{h.hour.slice(5)}</span>
+                  <div className="flex-1 h-3 rounded-sm bg-white/5 overflow-hidden min-w-0">
+                    <div className="h-full bg-blue-500/60" style={{ width: `${(h.opens / max) * 100}%` }} />
+                  </div>
+                  <span className="text-muted/70 whitespace-nowrap shrink-0">열림 {h.opens} · 클릭 {h.clicks} · 제출 {h.submits}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* 사전신청 이메일 raw */}
+      <div className="bg-surface rounded-2xl p-4 border border-border/30">
+        <h4 className="text-xs font-bold mb-1">사전신청 이메일 ({insights.recentEmails.length})</h4>
+        <p className="text-[10px] text-muted/70 mb-3">사전신청 모달에서 제출된 모든 이메일</p>
+        {insights.recentEmails.length === 0 ? (
+          <p className="text-xs text-muted text-center py-3">기록 없음</p>
+        ) : (
+          <div className="space-y-1">
+            {insights.recentEmails.map((e, i) => (
+              <div key={i} className="flex items-center gap-2 text-[11px]">
+                <span className="font-mono text-foreground/85 truncate flex-1">{e.email}</span>
+                <span className="text-[9px] text-muted/70 font-mono whitespace-nowrap">{e.created_at.slice(5, 16).replace("T", " ")}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

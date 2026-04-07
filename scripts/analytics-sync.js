@@ -20,6 +20,7 @@ function syncAnalytics() {
   const views = fetchTable("photo_views", "photo_id,user_id,created_at");
   const clicks = fetchTable("photo_clicks", "photo_id,user_id,created_at");
   const fakeDoorClicks = fetchTable("fake_door_clicks", "photo_id,user_id,source,created_at");
+  const modalOpens = fetchTable("photo_modal_opens", "photo_id,user_id,source,created_at");
   const photos = fetchTable("photos", "id,nickname,school,status");
   const admins = fetchTable("admins", "user_id");
 
@@ -31,6 +32,7 @@ function syncAnalytics() {
   var safeViews = views.filter(function(v) { return !v.user_id || !adminIds.has(v.user_id); });
   var safeClicks = clicks.filter(function(c) { return !c.user_id || !adminIds.has(c.user_id); });
   var safeFakeDoor = fakeDoorClicks.filter(function(f) { return !f.user_id || !adminIds.has(f.user_id); });
+  var safeModalOpens = modalOpens.filter(function(m) { return !m.user_id || !adminIds.has(m.user_id); });
 
   // === Sheet 1: 전체 통계 ===
   var summarySheet = getOrCreateSheet(ss, "전체 통계");
@@ -217,7 +219,42 @@ function syncAnalytics() {
     fdLog.getRange(2, 1, fdLogRows.length, 5).setValues(fdLogRows);
   }
 
-  Logger.log("동기화 완료: " + safeViews.length + " views, " + safeClicks.length + " clicks, " + safeFakeDoor.length + " fake door clicks");
+  // === Sheet 11: 모달 열기 로그 ===
+  var openLog = getOrCreateSheet(ss, "모달 열기 로그");
+  openLog.clear();
+  openLog.getRange(1, 1, 1, 5).setValues([["시간", "사진", "학교", "사용자", "소스"]]);
+  openLog.getRange(1, 1, 1, 5).setFontWeight("bold");
+  var openRows = safeModalOpens.map(function(m) {
+    var p = m.photo_id ? (photoMap[m.photo_id] || { nickname: "?", school: "?" }) : { nickname: "-", school: "-" };
+    return [
+      m.created_at,
+      p.nickname,
+      p.school === "yonsei" ? "연세대" : (p.school === "korea" ? "고려대" : "-"),
+      m.user_id ? (emailMap[m.user_id] || m.user_id.substring(0, 8) + "...") : "비로그인",
+      m.source,
+    ];
+  }).sort(function(a, b) { return a[0] > b[0] ? -1 : 1; });
+  if (openRows.length > 0) {
+    openLog.getRange(2, 1, openRows.length, 5).setValues(openRows);
+  }
+
+  // === Sheet 12: 모달 열기 소스별 ===
+  var openBySource = getOrCreateSheet(ss, "모달열기 소스별");
+  openBySource.clear();
+  openBySource.getRange(1, 1, 1, 2).setValues([["소스", "열린 횟수"]]);
+  openBySource.getRange(1, 1, 1, 2).setFontWeight("bold");
+  var openSourceCounts = {};
+  safeModalOpens.forEach(function(m) {
+    openSourceCounts[m.source] = (openSourceCounts[m.source] || 0) + 1;
+  });
+  var openSourceRows = Object.keys(openSourceCounts)
+    .map(function(s) { return [s, openSourceCounts[s]]; })
+    .sort(function(a, b) { return b[1] - a[1]; });
+  if (openSourceRows.length > 0) {
+    openBySource.getRange(2, 1, openSourceRows.length, 2).setValues(openSourceRows);
+  }
+
+  Logger.log("동기화 완료: " + safeViews.length + " views, " + safeClicks.length + " clicks, " + safeFakeDoor.length + " fake door clicks, " + safeModalOpens.length + " modal opens");
 }
 
 function fetchTable(table, select) {

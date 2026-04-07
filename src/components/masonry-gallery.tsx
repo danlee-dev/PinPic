@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
 import { PhotoEntry, School, VotingPeriod, ResultAnnouncement, RevealMode } from "@/lib/types";
-import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes, fetchTotalVoters } from "@/lib/api";
+import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes, fetchTotalVoters, recordPhotoModalOpen } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { fetchVotingPeriod, fetchResultAnnouncement, isResultRevealed, isVotingOpen, getVotingStatus } from "@/lib/admin";
 import { getRevealPreview, subscribeRevealPreview } from "@/lib/reveal-preview";
@@ -745,7 +745,7 @@ export function MasonryGallery() {
                   entry={entry}
                   index={index}
                   voted={votedIds.has(entry.id)}
-                  onClick={setSelectedEntry}
+                  onClick={(e) => { recordPhotoModalOpen({ photoId: e.id, source: "feed" }); setSelectedEntry(e); }}
                 />
               )}
             />
@@ -764,7 +764,7 @@ export function MasonryGallery() {
           <VoteStats
             entries={uniqueEntries}
             votedIds={votedIds}
-            onPhotoClick={setSelectedEntry}
+            onPhotoClick={(e) => { recordPhotoModalOpen({ photoId: e.id, source: "hall_of_fame" }); setSelectedEntry(e); }}
             revealMode={revealMode}
           />
         )}

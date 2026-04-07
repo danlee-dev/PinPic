@@ -415,6 +415,12 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
           {revealMode === "preview" && <span className="ml-2 text-[10px] font-normal text-red-400">(미리보기)</span>}
         </h3>
         {revealed ? (
+          entries.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="w-7 h-7 border-2 border-white/15 border-t-white rounded-full animate-spin" />
+              <p className="text-[11px] text-muted">결과를 불러오는 중...</p>
+            </div>
+          ) : (
           <div className="pb-28">
             <p className="text-[11px] text-muted mb-4">{totalVotes.toLocaleString()}명이 선택한 단 10장. 나머지는 잠겨 있어요.</p>
 
@@ -461,6 +467,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
               );
             })()}
           </div>
+          )
         ) : (
           <div className="relative">
             <div className="space-y-3">

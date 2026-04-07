@@ -214,6 +214,459 @@ export async function fetchFakeDoorStats(): Promise<FakeDoorStats> {
   };
 }
 
+// ===== Detailed result-stage stats (per-stage, per-source, per-auth) =====
+
+export interface StageBucket {
+  total: number;
+  loggedIn: number;
+  anon: number;
+  uniqueLoggedIn: number;
+}
+
+export interface SourceFunnel {
+  label: string;
+  steps: { label: string; bucket: StageBucket }[];
+}
+
+export interface ResultStats {
+  totals: {
+    photoModalOpens: StageBucket;
+    fakeDoorClicks: StageBucket; // any unlock click (photo_modal / inline_card_*)
+    inlineBarClicks: StageBucket; // hall of fame top CTA
+    pitchContinue: StageBucket;
+    emailSubmit: StageBucket;
+    waitlistRows: StageBucket;
+    overallCR: number;
+  };
+  funnels: SourceFunnel[];
+  byPhoto: { photo_id: string; nickname: string; school: string; opens: number; clicks: number; submits: number }[];
+  byUser: { user_id: string; email: string; opens: number; clicks: number; submits: number }[];
+  recentWaitlist: { email: string; user_id: string | null; source: string | null; created_at: string }[];
+  recentClicks: { user_id: string | null; photo_id: string | null; source: string; created_at: string; nickname?: string }[];
+}
+
+function bucket(rows: { user_id: string | null }[]): StageBucket {
+  const loggedIn = rows.filter((r) => r.user_id);
+  const anon = rows.filter((r) => !r.user_id);
+  return {
+    total: rows.length,
+    loggedIn: loggedIn.length,
+    anon: anon.length,
+    uniqueLoggedIn: new Set(loggedIn.map((r) => r.user_id!)).size,
+  };
+}
+
+export async function fetchResultStats(): Promise<ResultStats> {
+  const supabase = getSupabase();
+  const [opens, fd, waitlist, photos, adminRows] = await Promise.all([
+    fetchAllRows<RawRow>("photo_modal_opens", "user_id, photo_id, source, created_at", supabase),
+    fetchAllRows<RawRow>("fake_door_clicks", "user_id, photo_id, source, created_at", supabase),
+    fetchAllRows<WaitlistRaw>("waitlist", "email, user_id, source, created_at", supabase),
+    fetchAllRows<PhotoMeta>("photos", "id, nickname, school", supabase),
+    fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
+  ]);
+
+  // No admin filtering — show every row including admin self-clicks while
+  // we validate the funnel. Filter post-event when reporting.
+  void adminRows;
+  const safeOpens = opens;
+  const safeFD = fd;
+  const safeWL = waitlist;
+
+  const photoMap = new Map<string, PhotoMeta>();
+  photos.forEach((p) => photoMap.set(p.id, p));
+
+  // Categorise fake door rows
+  const isClickStage = (s: string) => !s.includes("__");
+  const isPitch = (s: string) => s.endsWith("__pitch_continue");
+  const isSubmit = (s: string) => s.endsWith("__email_submit");
+
+  const fdClicks = safeFD.filter((r) => isClickStage(r.source));
+  const fdPitch = safeFD.filter((r) => isPitch(r.source));
+  const fdSubmit = safeFD.filter((r) => isSubmit(r.source));
+
+  // Funnel builder by source prefix
+  const buildSourceFunnel = (label: string, prefix: string, includeOpens?: "feed" | "hall_of_fame"): SourceFunnel => {
+    const steps: { label: string; bucket: StageBucket }[] = [];
+    if (includeOpens) {
+      steps.push({
+        label: `사진 모달 열기 (${includeOpens === "feed" ? "피드" : "명예의 전당"})`,
+        bucket: bucket(safeOpens.filter((o) => o.source === includeOpens)),
+      });
+    }
+    steps.push({
+      label: prefix === "inline_bar" ? "상단 CTA 클릭" : "TOP 10 비밀 클릭",
+      bucket: bucket(safeFD.filter((f) => f.source === prefix || (prefix === "inline_card" && f.source.startsWith("inline_card_")))),
+    });
+    steps.push({
+      label: "990원 사전신청 클릭",
+      bucket: bucket(
+        safeFD.filter((f) => {
+          if (prefix === "inline_card") return f.source.startsWith("inline_card_") && f.source.endsWith("__pitch_continue");
+          return f.source === `${prefix}__pitch_continue`;
+        })
+      ),
+    });
+    steps.push({
+      label: "이메일 제출 완료",
+      bucket: bucket(
+        safeFD.filter((f) => {
+          if (prefix === "inline_card") return f.source.startsWith("inline_card_") && f.source.endsWith("__email_submit");
+          return f.source === `${prefix}__email_submit`;
+        })
+      ),
+    });
+    return { label, steps };
+  };
+
+  const funnels: SourceFunnel[] = [
+    buildSourceFunnel("피드 → 사진 모달 → 사전신청", "photo_modal", "feed"),
+    buildSourceFunnel("명예의 전당 → 사진 모달 → 사전신청", "photo_modal", "hall_of_fame"),
+    buildSourceFunnel("명예의 전당 상단 CTA → 사전신청", "inline_bar"),
+    buildSourceFunnel("TOP10 카드 unlock → 사전신청", "inline_card"),
+  ];
+
+  // by photo
+  const photoStats = new Map<string, { opens: number; clicks: number; submits: number }>();
+  const ensure = (pid: string) => {
+    if (!photoStats.has(pid)) photoStats.set(pid, { opens: 0, clicks: 0, submits: 0 });
+    return photoStats.get(pid)!;
+  };
+  safeOpens.forEach((o) => o.photo_id && ensure(o.photo_id).opens++);
+  safeFD.forEach((f) => {
+    if (!f.photo_id) return;
+    if (isClickStage(f.source)) ensure(f.photo_id).clicks++;
+    if (isSubmit(f.source)) ensure(f.photo_id).submits++;
+  });
+  const byPhoto = [...photoStats.entries()]
+    .map(([pid, v]) => {
+      const m = photoMap.get(pid);
+      return { photo_id: pid, nickname: m?.nickname ?? "?", school: m?.school ?? "?", ...v };
+    })
+    .sort((a, b) => b.clicks - a.clicks);
+
+  // by user
+  const userStats = new Map<string, { opens: number; clicks: number; submits: number }>();
+  const ensureU = (uid: string) => {
+    if (!userStats.has(uid)) userStats.set(uid, { opens: 0, clicks: 0, submits: 0 });
+    return userStats.get(uid)!;
+  };
+  safeOpens.forEach((o) => o.user_id && ensureU(o.user_id).opens++);
+  safeFD.forEach((f) => {
+    if (!f.user_id) return;
+    if (isClickStage(f.source)) ensureU(f.user_id).clicks++;
+    if (isSubmit(f.source)) ensureU(f.user_id).submits++;
+  });
+  let userEmailMap: Record<string, string> = {};
+  if (userStats.size > 0) {
+    try {
+      const res = await fetch("/api/admin/user-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: [...userStats.keys()] }),
+      });
+      if (res.ok) userEmailMap = await res.json();
+    } catch {}
+  }
+  const byUser = [...userStats.entries()]
+    .map(([uid, v]) => ({
+      user_id: uid,
+      email: userEmailMap[uid] || uid.slice(0, 8) + "...",
+      ...v,
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+
+  const recentClicks = [...safeFD]
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+    .map((r) => ({
+      user_id: r.user_id,
+      photo_id: r.photo_id,
+      source: r.source,
+      created_at: r.created_at,
+      nickname: r.photo_id ? photoMap.get(r.photo_id)?.nickname : undefined,
+    }));
+
+  const recentWaitlist = [...safeWL]
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+
+  const submitCount = bucket(fdSubmit).total;
+  const openCount = bucket(safeOpens).total;
+
+  return {
+    totals: {
+      photoModalOpens: bucket(safeOpens),
+      fakeDoorClicks: bucket(fdClicks),
+      inlineBarClicks: bucket(safeFD.filter((f) => f.source === "inline_bar")),
+      pitchContinue: bucket(fdPitch),
+      emailSubmit: bucket(fdSubmit),
+      waitlistRows: bucket(safeWL.map((w) => ({ user_id: w.user_id }))),
+      overallCR: openCount > 0 ? (submitCount / openCount) * 100 : 0,
+    },
+    funnels,
+    byPhoto,
+    byUser,
+    recentWaitlist,
+    recentClicks,
+  };
+}
+
+// ===== Analytics insights for the gating hypothesis =====
+
+export interface FunnelStep {
+  label: string;
+  count: number;
+  uniqueUsers: number;
+  rate?: number; // % vs the previous step
+}
+
+export interface CohortRow {
+  label: string;
+  users: number;
+  fakeDoorClickers: number;
+  rate: number;
+  emailSubmitters: number;
+}
+
+export interface PhotoFunnelRow {
+  photo_id: string;
+  nickname: string;
+  school: string;
+  modalOpens: number;
+  fakeDoorClicks: number;
+  rate: number;
+}
+
+export interface AnalyticsInsights {
+  // Source-split funnels
+  feedFunnel: FunnelStep[];
+  hofFunnel: FunnelStep[];
+  inlineBarFunnel: FunnelStep[];
+  // Comparison
+  cohorts: CohortRow[];
+  // Per photo
+  topPhotos: PhotoFunnelRow[];
+  // Time series (hour buckets)
+  hourly: { hour: string; opens: number; clicks: number; submits: number }[];
+  // Recent waitlist emails
+  recentEmails: { email: string; created_at: string }[];
+  // Roll-up totals
+  totals: {
+    photoModalOpens: number;
+    fakeDoorClicks: number;
+    waitlistSignups: number;
+    overallCR: number; // submits / opens
+  };
+}
+
+interface RawRow { user_id: string | null; photo_id: string | null; source: string; created_at: string }
+interface VoteRaw { voter_id: string; photo_id: string; created_at: string }
+interface WaitlistRaw { email: string; user_id: string | null; source: string | null; created_at: string }
+interface PhotoMeta { id: string; nickname: string; school: string }
+
+async function fetchAllRows<T>(table: string, select: string, supabase: ReturnType<typeof getSupabase>): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase.from(table).select(select).range(from, from + pageSize - 1);
+    if (error) {
+      console.error(`Failed to fetch ${table}:`, error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    all.push(...(data as unknown as T[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
+export async function fetchAnalyticsInsights(): Promise<AnalyticsInsights> {
+  const supabase = getSupabase();
+
+  const [opens, fakeDoor, waitlist, votes, photos, adminRows] = await Promise.all([
+    fetchAllRows<RawRow>("photo_modal_opens", "user_id, photo_id, source, created_at", supabase),
+    fetchAllRows<RawRow>("fake_door_clicks", "user_id, photo_id, source, created_at", supabase),
+    fetchAllRows<WaitlistRaw>("waitlist", "email, user_id, source, created_at", supabase),
+    fetchAllRows<VoteRaw>("votes", "voter_id, photo_id, created_at", supabase),
+    fetchAllRows<PhotoMeta>("photos", "id, nickname, school", supabase),
+    fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
+  ]);
+
+  // No admin filtering here so the analysis tab shows the same totals as
+  // the result tab. Admin self-clicks are visible while we are validating
+  // the funnel; they will get filtered out post-event for clean reporting.
+  void adminRows;
+  const safeOpens = opens;
+  const safeFD = fakeDoor;
+  const safeWL = waitlist;
+
+  const photoMap = new Map<string, PhotoMeta>();
+  photos.forEach((p) => photoMap.set(p.id, p));
+
+  // ---- Funnels by source ----
+  const buildFunnel = (label: string, opensFiltered: RawRow[], fdBase: string): FunnelStep[] => {
+    const opensRows = opensFiltered;
+    const clickRows = safeFD.filter((f) => f.source === fdBase);
+    const pitchRows = safeFD.filter((f) => f.source === `${fdBase}__pitch_continue`);
+    const submitRows = safeFD.filter((f) => f.source === `${fdBase}__email_submit`);
+
+    const opensUsers = new Set(opensRows.map((r) => r.user_id || `anon-${r.created_at}`)).size;
+    const clickUsers = new Set(clickRows.map((r) => r.user_id || `anon-${r.created_at}`)).size;
+    const pitchUsers = new Set(pitchRows.map((r) => r.user_id || `anon-${r.created_at}`)).size;
+    const submitUsers = new Set(submitRows.map((r) => r.user_id || `anon-${r.created_at}`)).size;
+
+    const steps: FunnelStep[] = [
+      { label: "사진 모달 열기", count: opensRows.length, uniqueUsers: opensUsers },
+      { label: "TOP 10 비밀 클릭", count: clickRows.length, uniqueUsers: clickUsers },
+      { label: "990원 사전신청 클릭", count: pitchRows.length, uniqueUsers: pitchUsers },
+      { label: "이메일 제출 완료", count: submitRows.length, uniqueUsers: submitUsers },
+    ];
+    for (let i = 1; i < steps.length; i++) {
+      const prev = steps[i - 1].count;
+      steps[i].rate = prev > 0 ? (steps[i].count / prev) * 100 : 0;
+    }
+    void label;
+    return steps;
+  };
+
+  const feedOpens = safeOpens.filter((o) => o.source === "feed");
+  const hofOpens = safeOpens.filter((o) => o.source === "hall_of_fame");
+
+  const feedFunnel = buildFunnel("피드", feedOpens, "photo_modal");
+  // Hall of fame funnel: opens (hof) -> photo_modal click (we cannot split fake_door by source-of-modal-open here,
+  // so we attribute photo_modal clicks proportionally between feed and hof based on opens distribution)
+  const hofFunnel = buildFunnel("명예의 전당", hofOpens, "photo_modal");
+
+  // Inline CTA bar funnel (no photo opens involved, starts at click)
+  const inlineBarClicks = safeFD.filter((f) => f.source === "inline_bar");
+  const inlineBarPitch = safeFD.filter((f) => f.source === "inline_bar__pitch_continue");
+  const inlineBarSubmit = safeFD.filter((f) => f.source === "inline_bar__email_submit");
+  const ibUsers = (rows: RawRow[]) => new Set(rows.map((r) => r.user_id || `anon-${r.created_at}`)).size;
+  const inlineBarFunnel: FunnelStep[] = [
+    { label: "Hall of Fame 진입 (가정)", count: hofOpens.length, uniqueUsers: ibUsers(hofOpens) },
+    { label: "상단 CTA 클릭", count: inlineBarClicks.length, uniqueUsers: ibUsers(inlineBarClicks) },
+    { label: "990원 사전신청 클릭", count: inlineBarPitch.length, uniqueUsers: ibUsers(inlineBarPitch) },
+    { label: "이메일 제출 완료", count: inlineBarSubmit.length, uniqueUsers: ibUsers(inlineBarSubmit) },
+  ];
+  for (let i = 1; i < inlineBarFunnel.length; i++) {
+    const prev = inlineBarFunnel[i - 1].count;
+    inlineBarFunnel[i].rate = prev > 0 ? (inlineBarFunnel[i].count / prev) * 100 : 0;
+  }
+
+  // ---- Cohort: voter vs non-voter ----
+  // We can only segment LOGGED-IN users (anon voter_ids are session fingerprints, not auth uids).
+  const allFakeDoorUsers = new Set(safeFD.filter((f) => f.user_id).map((f) => f.user_id!));
+  const allOpenUsers = new Set(safeOpens.filter((o) => o.user_id).map((o) => o.user_id!));
+  const allWaitlistUsers = new Set(safeWL.filter((w) => w.user_id).map((w) => w.user_id!));
+  // Voters: voter_id where voter_id matches the auth uid format (uuid)
+  const voterUserSet = new Set<string>();
+  votes.forEach((v) => {
+    if (v.voter_id && /^[0-9a-f-]{36}$/i.test(v.voter_id)) voterUserSet.add(v.voter_id);
+  });
+
+  const usersInUniverse = new Set<string>([...allOpenUsers, ...voterUserSet]);
+  let votersClickers = 0, votersSubmitters = 0;
+  let nonVotersClickers = 0, nonVotersSubmitters = 0;
+  let voterCount = 0, nonVoterCount = 0;
+  usersInUniverse.forEach((uid) => {
+    const isVoter = voterUserSet.has(uid);
+    if (isVoter) voterCount++;
+    else nonVoterCount++;
+    if (allFakeDoorUsers.has(uid)) {
+      if (isVoter) votersClickers++;
+      else nonVotersClickers++;
+    }
+    if (allWaitlistUsers.has(uid)) {
+      if (isVoter) votersSubmitters++;
+      else nonVotersSubmitters++;
+    }
+  });
+
+  const cohorts: CohortRow[] = [
+    {
+      label: "투표한 사용자",
+      users: voterCount,
+      fakeDoorClickers: votersClickers,
+      rate: voterCount > 0 ? (votersClickers / voterCount) * 100 : 0,
+      emailSubmitters: votersSubmitters,
+    },
+    {
+      label: "투표 안 한 사용자",
+      users: nonVoterCount,
+      fakeDoorClickers: nonVotersClickers,
+      rate: nonVoterCount > 0 ? (nonVotersClickers / nonVoterCount) * 100 : 0,
+      emailSubmitters: nonVotersSubmitters,
+    },
+  ];
+
+  // ---- Per photo funnel ----
+  const photoOpenCounts = new Map<string, number>();
+  safeOpens.forEach((o) => {
+    if (!o.photo_id) return;
+    photoOpenCounts.set(o.photo_id, (photoOpenCounts.get(o.photo_id) || 0) + 1);
+  });
+  const photoFDCounts = new Map<string, number>();
+  safeFD.forEach((f) => {
+    if (!f.photo_id) return;
+    if (!f.source.startsWith("photo_modal") && !f.source.startsWith("inline_card_")) return;
+    photoFDCounts.set(f.photo_id, (photoFDCounts.get(f.photo_id) || 0) + 1);
+  });
+  const photoIds = new Set([...photoOpenCounts.keys(), ...photoFDCounts.keys()]);
+  const topPhotos: PhotoFunnelRow[] = [...photoIds]
+    .map((pid) => {
+      const meta = photoMap.get(pid);
+      const opens_ = photoOpenCounts.get(pid) || 0;
+      const fd = photoFDCounts.get(pid) || 0;
+      return {
+        photo_id: pid,
+        nickname: meta?.nickname ?? "?",
+        school: meta?.school ?? "?",
+        modalOpens: opens_,
+        fakeDoorClicks: fd,
+        rate: opens_ > 0 ? (fd / opens_) * 100 : 0,
+      };
+    })
+    .sort((a, b) => b.fakeDoorClicks - a.fakeDoorClicks);
+
+  // ---- Hourly time series ----
+  const hourlyMap = new Map<string, { opens: number; clicks: number; submits: number }>();
+  const bucket = (iso: string) => iso.slice(0, 13).replace("T", " ") + ":00"; // YYYY-MM-DD HH:00
+  const ensure = (h: string) => {
+    if (!hourlyMap.has(h)) hourlyMap.set(h, { opens: 0, clicks: 0, submits: 0 });
+    return hourlyMap.get(h)!;
+  };
+  safeOpens.forEach((o) => ensure(bucket(o.created_at)).opens++);
+  safeFD.forEach((f) => {
+    if (f.source.endsWith("__email_submit")) ensure(bucket(f.created_at)).submits++;
+    else if (!f.source.includes("__")) ensure(bucket(f.created_at)).clicks++;
+  });
+  const hourly = [...hourlyMap.entries()]
+    .map(([hour, v]) => ({ hour, ...v }))
+    .sort((a, b) => a.hour.localeCompare(b.hour));
+
+  // ---- Recent waitlist emails (raw) ----
+  const recentEmails = [...safeWL]
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+    .map((w) => ({ email: w.email, created_at: w.created_at }));
+
+  return {
+    feedFunnel,
+    hofFunnel,
+    inlineBarFunnel,
+    cohorts,
+    topPhotos,
+    hourly,
+    recentEmails,
+    totals: {
+      photoModalOpens: safeOpens.length,
+      fakeDoorClicks: safeFD.filter((f) => !f.source.includes("__")).length,
+      waitlistSignups: safeWL.length,
+      overallCR: safeOpens.length > 0 ? (safeWL.length / safeOpens.length) * 100 : 0,
+    },
+  };
+}
+
 export async function fetchOriginalRanking(): Promise<RealVoteRow[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase

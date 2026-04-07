@@ -163,6 +163,16 @@ export async function unvotePhoto(photoId: string): Promise<boolean> {
   return true;
 }
 
+export async function recordPhotoModalOpen(opts: { photoId: string; source: "feed" | "hall_of_fame" }): Promise<void> {
+  const supabase = getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  await supabase.from("photo_modal_opens").insert({
+    photo_id: opts.photoId,
+    user_id: user?.id ?? null,
+    source: opts.source,
+  });
+}
+
 export async function recordFakeDoorClick(opts: { photoId?: string; source: string }): Promise<void> {
   const supabase = getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
