@@ -614,38 +614,13 @@ export function MasonryGallery() {
                 <div className="absolute inset-0 pointer-events-none" style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", borderRight: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)", borderRadius: "0 0 24px 24px" }} />
 
               {/* Reveal-mode title + count-up stats */}
-              {showResults && uniqueEntries.length > 0 && (() => {
-                const totalVotesAll = uniqueEntries.reduce((s, e) => s + e.votes, 0);
-                return (
-                  <div className="relative mb-4 text-center">
-                    <p className="text-[10px] font-semibold tracking-[0.2em] text-foreground/55 uppercase mb-1">
-                      제1회 캠퍼스 사진 고연전
-                    </p>
-                    <p className="text-[15px] font-black mb-3">결과가 발표됐어요</p>
-                    <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                      <div>
-                        <p className="text-[18px] font-black text-foreground leading-none">
-                          <CountUp to={totalVotesAll} duration={1500} />
-                        </p>
-                        <p className="text-[9px] text-muted mt-1">총 투표수</p>
-                      </div>
-                      <div>
-                        <p className="text-[18px] font-black text-foreground leading-none">
-                          <CountUp to={uniqueEntries.length} duration={1200} delay={150} />
-                        </p>
-                        <p className="text-[9px] text-muted mt-1">출품작</p>
-                      </div>
-                      <div>
-                        <p className="text-[18px] font-black text-foreground leading-none">
-                          <CountUp to={totalVoters} duration={1500} delay={300} />
-                        </p>
-                        <p className="text-[9px] text-muted mt-1">참여자</p>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-muted mt-3">양교의 낭만이 모인 결과를 확인하세요</p>
-                  </div>
-                );
-              })()}
+              {showResults && uniqueEntries.length > 0 && (
+                <RevealStatsBlock
+                  totalVotes={uniqueEntries.reduce((s, e) => s + e.votes, 0)}
+                  totalEntries={uniqueEntries.length}
+                  totalVoters={totalVoters}
+                />
+              )}
 
               {/* Mini vote bar */}
               {uniqueEntries.length > 0 && (
@@ -874,4 +849,55 @@ function formatKST(utcStr?: string): string {
   if (!utcStr) return "";
   const d = new Date(utcStr);
   return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function RevealStatsBlock({ totalVotes, totalEntries, totalVoters }: { totalVotes: number; totalEntries: number; totalVoters: number }) {
+  return (
+    <div className="relative mb-4 text-center">
+      <p className="text-[10px] font-semibold tracking-[0.2em] text-foreground/55 uppercase mb-1 animate-stat-rise" style={{ animationDelay: "0ms" }}>
+        제1회 캠퍼스 사진 고연전
+      </p>
+      <p className="text-[22px] font-black mb-4 animate-stat-rise tracking-tight" style={{ animationDelay: "80ms" }}>
+        결과가 발표됐어요
+      </p>
+      <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+        <StatTile to={totalVotes} label="총 투표수" delay={250} duration={1600} riseDelay="200ms" />
+        <StatTile to={totalEntries} label="출품작" delay={400} duration={1300} riseDelay="320ms" />
+        <StatTile to={totalVoters} label="참여자" delay={550} duration={1600} riseDelay="440ms" />
+      </div>
+      <p className="text-[11px] text-muted mt-4 animate-stat-rise" style={{ animationDelay: "560ms" }}>
+        양교의 낭만이 모인 결과를 확인하세요
+      </p>
+    </div>
+  );
+}
+
+function StatTile({
+  to,
+  label,
+  delay,
+  duration,
+  riseDelay,
+}: {
+  to: number;
+  label: string;
+  delay: number;
+  duration: number;
+  riseDelay: string;
+}) {
+  const [popped, setPopped] = useState(false);
+  const handleComplete = useCallback(() => {
+    if (popped) return;
+    setPopped(true);
+  }, [popped]);
+  return (
+    <div className="animate-stat-rise" style={{ animationDelay: riseDelay }}>
+      <div className={`inline-block ${popped ? "animate-number-pop" : ""}`}>
+        <p className="text-[22px] font-bold leading-none text-foreground">
+          <CountUp to={to} duration={duration} delay={delay} onComplete={handleComplete} />
+        </p>
+      </div>
+      <p className="text-[10px] text-muted mt-1.5 font-medium">{label}</p>
+    </div>
+  );
 }

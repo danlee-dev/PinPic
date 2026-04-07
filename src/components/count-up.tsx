@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface CountUpProps {
   to: number;
@@ -13,6 +13,9 @@ interface CountUpProps {
 
 export function CountUp({ to, duration = 1400, delay = 0, className, format, onComplete }: CountUpProps) {
   const [value, setValue] = useState(0);
+  // Keep latest onComplete in a ref so it does not retrigger the animation
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
     if (to <= 0) {
@@ -34,7 +37,7 @@ export function CountUp({ to, duration = 1400, delay = 0, className, format, onC
         if (t < 1) {
           raf = requestAnimationFrame(tick);
         } else {
-          onComplete?.();
+          onCompleteRef.current?.();
         }
       };
       raf = requestAnimationFrame(tick);
@@ -44,7 +47,7 @@ export function CountUp({ to, duration = 1400, delay = 0, className, format, onC
       clearTimeout(timer);
       cancelAnimationFrame(raf);
     };
-  }, [to, duration, delay, onComplete]);
+  }, [to, duration, delay]);
 
   return <span className={className}>{format ? format(value) : value.toLocaleString()}</span>;
 }
