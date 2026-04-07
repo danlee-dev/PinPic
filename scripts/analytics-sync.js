@@ -19,6 +19,7 @@ function syncAnalytics() {
   // Fetch data from Supabase
   const views = fetchTable("photo_views", "photo_id,user_id,created_at");
   const clicks = fetchTable("photo_clicks", "photo_id,user_id,created_at");
+  const fakeDoorClicks = fetchTable("fake_door_clicks", "photo_id,user_id,source,created_at");
   const photos = fetchTable("photos", "id,nickname,school,status");
   const admins = fetchTable("admins", "user_id");
 
@@ -29,6 +30,7 @@ function syncAnalytics() {
   // Filter out admins
   var safeViews = views.filter(function(v) { return !v.user_id || !adminIds.has(v.user_id); });
   var safeClicks = clicks.filter(function(c) { return !c.user_id || !adminIds.has(c.user_id); });
+  var safeFakeDoor = fakeDoorClicks.filter(function(f) { return !f.user_id || !adminIds.has(f.user_id); });
 
   // === Sheet 1: 전체 통계 ===
   var summarySheet = getOrCreateSheet(ss, "전체 통계");
@@ -126,7 +128,96 @@ function syncAnalytics() {
     clickLogSheet.getRange(2, 1, clickRows.length, 4).setValues(clickRows);
   }
 
-  Logger.log("동기화 완료: " + safeViews.length + " views, " + safeClicks.length + " clicks");
+  // === Sheet 6: 페이크 도어 전체 ===
+  var fdSummary = getOrCreateSheet(ss, "페이크도어 전체");
+  fdSummary.clear();
+  fdSummary.getRange(1, 1, 1, 4).setValues([["총 클릭", "고유 로그인", "비로그인", "고유 사진"]]);
+  fdSummary.getRange(1, 1, 1, 4).setFontWeight("bold");
+  var loggedInUsers = {}, anonCount = 0, photoSet = {};
+  safeFakeDoor.forEach(function(f) {
+    if (f.user_id) loggedInUsers[f.user_id] = true; else anonCount++;
+    if (f.photo_id) photoSet[f.photo_id] = true;
+  });
+  fdSummary.getRange(2, 1, 1, 4).setValues([[
+    safeFakeDoor.length,
+    Object.keys(loggedInUsers).length,
+    anonCount,
+    Object.keys(photoSet).length,
+  ]]);
+
+  // === Sheet 7: 페이크 도어 소스별 ===
+  var fdSource = getOrCreateSheet(ss, "페이크도어 소스별");
+  fdSource.clear();
+  fdSource.getRange(1, 1, 1, 2).setValues([["소스", "클릭 수"]]);
+  fdSource.getRange(1, 1, 1, 2).setFontWeight("bold");
+  var sourceCounts = {};
+  safeFakeDoor.forEach(function(f) {
+    sourceCounts[f.source] = (sourceCounts[f.source] || 0) + 1;
+  });
+  var sourceRows = Object.keys(sourceCounts)
+    .map(function(s) { return [s, sourceCounts[s]]; })
+    .sort(function(a, b) { return b[1] - a[1]; });
+  if (sourceRows.length > 0) {
+    fdSource.getRange(2, 1, sourceRows.length, 2).setValues(sourceRows);
+  }
+
+  // === Sheet 8: 페이크 도어 사진별 ===
+  var fdPhoto = getOrCreateSheet(ss, "페이크도어 사진별");
+  fdPhoto.clear();
+  fdPhoto.getRange(1, 1, 1, 3).setValues([["닉네임", "학교", "클릭 수"]]);
+  fdPhoto.getRange(1, 1, 1, 3).setFontWeight("bold");
+  var fdPhotoCounts = {};
+  safeFakeDoor.forEach(function(f) {
+    if (!f.photo_id) return;
+    fdPhotoCounts[f.photo_id] = (fdPhotoCounts[f.photo_id] || 0) + 1;
+  });
+  var fdPhotoRows = Object.keys(fdPhotoCounts).map(function(pid) {
+    var p = photoMap[pid] || { nickname: "?", school: "?" };
+    return [p.nickname, p.school === "yonsei" ? "연세대" : "고려대", fdPhotoCounts[pid]];
+  }).sort(function(a, b) { return b[2] - a[2]; });
+  if (fdPhotoRows.length > 0) {
+    fdPhoto.getRange(2, 1, fdPhotoRows.length, 3).setValues(fdPhotoRows);
+  }
+
+  // === Sheet 9: 페이크 도어 사용자별 ===
+  var fdUser = getOrCreateSheet(ss, "페이크도어 사용자별");
+  fdUser.clear();
+  fdUser.getRange(1, 1, 1, 2).setValues([["사용자", "클릭 수"]]);
+  fdUser.getRange(1, 1, 1, 2).setFontWeight("bold");
+  var fdUserCounts = {};
+  safeFakeDoor.forEach(function(f) {
+    if (!f.user_id) return;
+    fdUserCounts[f.user_id] = (fdUserCounts[f.user_id] || 0) + 1;
+  });
+  var fdUserRows = Object.keys(fdUserCounts)
+    .map(function(uid) {
+      return [emailMap[uid] || uid.substring(0, 8) + "...", fdUserCounts[uid]];
+    })
+    .sort(function(a, b) { return b[1] - a[1]; });
+  if (fdUserRows.length > 0) {
+    fdUser.getRange(2, 1, fdUserRows.length, 2).setValues(fdUserRows);
+  }
+
+  // === Sheet 10: 페이크 도어 Raw 로그 ===
+  var fdLog = getOrCreateSheet(ss, "페이크도어 로그");
+  fdLog.clear();
+  fdLog.getRange(1, 1, 1, 5).setValues([["시간", "사진", "학교", "사용자", "소스"]]);
+  fdLog.getRange(1, 1, 1, 5).setFontWeight("bold");
+  var fdLogRows = safeFakeDoor.map(function(f) {
+    var p = f.photo_id ? (photoMap[f.photo_id] || { nickname: "?", school: "?" }) : { nickname: "-", school: "-" };
+    return [
+      f.created_at,
+      p.nickname,
+      p.school === "yonsei" ? "연세대" : (p.school === "korea" ? "고려대" : "-"),
+      f.user_id ? (emailMap[f.user_id] || f.user_id.substring(0, 8) + "...") : "비로그인",
+      f.source,
+    ];
+  }).sort(function(a, b) { return a[0] > b[0] ? -1 : 1; });
+  if (fdLogRows.length > 0) {
+    fdLog.getRange(2, 1, fdLogRows.length, 5).setValues(fdLogRows);
+  }
+
+  Logger.log("동기화 완료: " + safeViews.length + " views, " + safeClicks.length + " clicks, " + safeFakeDoor.length + " fake door clicks");
 }
 
 function fetchTable(table, select) {

@@ -6,7 +6,7 @@ import { ConfettiBurst } from "./confetti-burst";
 import { FakeDoorModal } from "./fake-door-modal";
 import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
-import { fetchVoteOverrides } from "@/lib/api";
+import { fetchVoteOverrides, recordFakeDoorClick } from "@/lib/api";
 
 interface VoteStatsProps {
   entries: PhotoEntry[];
@@ -28,10 +28,11 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
   }, []);
   const revealed = revealMode !== "hidden";
 
-  const openFakeDoor = (src: string) => {
+  const openFakeDoor = (src: string, photoId?: string) => {
     setFakeDoorSource(src);
     setFakeDoorOpen(true);
     trackEvent("fake_door_click", { source: src });
+    recordFakeDoorClick({ source: src, photoId });
   };
 
   useEffect(() => {
@@ -421,7 +422,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
             <TopThreeCarousel
               entries={sortedByVotes.slice(0, 3)}
               onPhotoClick={onPhotoClick}
-              onUnlock={(rank) => openFakeDoor(`inline_card_${rank}`)}
+              onUnlock={(rank, photoId) => openFakeDoor(`inline_card_${rank}`, photoId)}
             />
 
             {/* #4 ~ #10 — masonry: distribute to the shorter column so the
@@ -444,7 +445,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                     rank={rank}
                     variant="grid"
                     onPhotoClick={onPhotoClick}
-                    onUnlock={() => openFakeDoor(`inline_card_${rank}`)}
+                    onUnlock={() => openFakeDoor(`inline_card_${rank}`, entry.id)}
                   />
                 </div>
               );
@@ -743,7 +744,7 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
 interface TopThreeCarouselProps {
   entries: PhotoEntry[];
   onPhotoClick: (entry: PhotoEntry) => void;
-  onUnlock: (rank: number) => void;
+  onUnlock: (rank: number, photoId: string) => void;
 }
 
 function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselProps) {
@@ -876,7 +877,7 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
               rank={rank}
               variant="hero"
               onPhotoClick={onPhotoClick}
-              onUnlock={() => onUnlock(rank)}
+              onUnlock={() => onUnlock(rank, entry.id)}
             />
           </div>
         );

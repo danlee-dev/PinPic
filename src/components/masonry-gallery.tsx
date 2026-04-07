@@ -893,7 +893,7 @@ function StatTile({
   return (
     <div className="animate-stat-rise" style={{ animationDelay: riseDelay }}>
       <div className={`inline-block ${popped ? "animate-number-pop" : ""}`}>
-        <p className="text-[22px] font-extrabold leading-none text-foreground">
+        <p className="text-[28px] font-rank leading-none text-foreground" style={{ transform: "translateY(2px)" }}>
           <CountUp to={to} duration={duration} delay={delay} onComplete={handleComplete} />
         </p>
       </div>

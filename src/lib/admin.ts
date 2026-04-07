@@ -101,6 +101,119 @@ export interface RealVoteRow {
   vote_offset: number;  // manual offset applied for display
 }
 
+// ===== Fake door click stats =====
+
+export interface FakeDoorClickRow {
+  id: string;
+  photo_id: string | null;
+  user_id: string | null;
+  source: string;
+  created_at: string;
+}
+
+export interface FakeDoorStats {
+  total: number;
+  uniqueUsers: number;
+  uniqueAnon: number;
+  bySource: { source: string; count: number }[];
+  byPhoto: { photo_id: string; nickname: string; school: string; count: number }[];
+  byUser: { user_id: string; email: string; count: number }[];
+  recent: FakeDoorClickRow[];
+}
+
+export async function fetchFakeDoorStats(): Promise<FakeDoorStats> {
+  const supabase = getSupabase();
+
+  // Pull all rows (small dataset for now)
+  const rows: FakeDoorClickRow[] = [];
+  let from = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await supabase
+      .from("fake_door_clicks")
+      .select("id, photo_id, user_id, source, created_at")
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) {
+      console.error("Failed to fetch fake_door_clicks:", error);
+      break;
+    }
+    if (!data || data.length === 0) break;
+    rows.push(...(data as FakeDoorClickRow[]));
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  // by source
+  const sourceMap = new Map<string, number>();
+  for (const r of rows) sourceMap.set(r.source, (sourceMap.get(r.source) || 0) + 1);
+  const bySource = [...sourceMap.entries()]
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // by photo
+  const photoCounts = new Map<string, number>();
+  for (const r of rows) {
+    if (r.photo_id) photoCounts.set(r.photo_id, (photoCounts.get(r.photo_id) || 0) + 1);
+  }
+  let byPhoto: FakeDoorStats["byPhoto"] = [];
+  if (photoCounts.size > 0) {
+    const photoIds = [...photoCounts.keys()];
+    const { data: photoMeta } = await supabase
+      .from("photos")
+      .select("id, nickname, school")
+      .in("id", photoIds);
+    const metaMap = new Map<string, { nickname: string; school: string }>();
+    for (const p of (photoMeta as { id: string; nickname: string; school: string }[]) || []) {
+      metaMap.set(p.id, { nickname: p.nickname, school: p.school });
+    }
+    byPhoto = [...photoCounts.entries()]
+      .map(([photo_id, count]) => ({
+        photo_id,
+        nickname: metaMap.get(photo_id)?.nickname ?? "?",
+        school: metaMap.get(photo_id)?.school ?? "?",
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  // by user (resolve emails)
+  const userCounts = new Map<string, number>();
+  for (const r of rows) {
+    if (r.user_id) userCounts.set(r.user_id, (userCounts.get(r.user_id) || 0) + 1);
+  }
+  let byUser: FakeDoorStats["byUser"] = [];
+  if (userCounts.size > 0) {
+    const userIds = [...userCounts.keys()];
+    let emailMap: Record<string, string> = {};
+    try {
+      const res = await fetch("/api/admin/user-emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds }),
+      });
+      if (res.ok) emailMap = await res.json();
+    } catch {}
+    byUser = [...userCounts.entries()]
+      .map(([user_id, count]) => ({
+        user_id,
+        email: emailMap[user_id] || user_id.slice(0, 8) + "...",
+        count,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  return {
+    total: rows.length,
+    uniqueUsers: userCounts.size,
+    uniqueAnon: rows.filter((r) => !r.user_id).length,
+    bySource,
+    byPhoto,
+    byUser,
+    recent: rows.slice(0, 30),
+  };
+}
+
 export async function fetchOriginalRanking(): Promise<RealVoteRow[]> {
   const supabase = getSupabase();
   const { data, error } = await supabase

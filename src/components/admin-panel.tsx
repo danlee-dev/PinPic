@@ -19,6 +19,8 @@ import {
   EngagementStats,
   fetchOriginalRanking,
   RealVoteRow,
+  fetchFakeDoorStats,
+  FakeDoorStats,
 } from "@/lib/admin";
 import { getRevealPreview, setRevealPreview } from "@/lib/reveal-preview";
 import { SchoolBadge } from "./school-badge";
@@ -95,6 +97,8 @@ export function AdminPanel() {
   const [photoSearch, setPhotoSearch] = useState("");
   const [engagement, setEngagement] = useState<EngagementStats | null>(null);
   const [originalRanking, setOriginalRanking] = useState<RealVoteRow[]>([]);
+  const [fakeDoor, setFakeDoor] = useState<FakeDoorStats | null>(null);
+  const [clicksSubTab, setClicksSubTab] = useState<"vote" | "result">("vote");
   const [photoPage, setPhotoPage] = useState(0);
   const [userPage, setUserPage] = useState(0);
   const [photoSort, setPhotoSort] = useState<"views" | "rate">("views");
@@ -112,7 +116,7 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, ann, adm, eng, orig] = await Promise.all([
+    const [p, all, vp, ann, adm, eng, orig, fd] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
@@ -120,6 +124,7 @@ export function AdminPanel() {
       fetchAdmins(),
       fetchEngagementStats(),
       fetchOriginalRanking(),
+      fetchFakeDoorStats(),
     ]);
     setPending(p);
     setEngagement(eng);
@@ -128,6 +133,7 @@ export function AdminPanel() {
     setAnnouncement(ann);
     setAdmins(adm);
     setOriginalRanking(orig);
+    setFakeDoor(fd);
     if (vp) {
       setEditStart(toKSTInput(vp.start));
       setEditEnd(toKSTInput(vp.end));
@@ -383,6 +389,23 @@ export function AdminPanel() {
 
       {tab === "clicks" && engagement && (
         <div className="space-y-4">
+          {/* Sub-segmented control: 투표 vs 결과 */}
+          <div className="flex gap-1 bg-surface rounded-xl p-1">
+            {([
+              ["vote", "투표 (조회/스팟)"],
+              ["result", "결과 (페이크 도어)"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setClicksSubTab(value)}
+                className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors cursor-pointer
+                  ${clicksSubTab === value ? "bg-white/10 text-foreground" : "text-muted hover:text-foreground"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* 스프레드시트 링크 */}
           <a
             href="https://docs.google.com/spreadsheets/d/1qGGTXxQ_X-4HkrYpUhNWo0W2cEZc549d7EdSXSUw7pg/edit"
@@ -396,6 +419,8 @@ export function AdminPanel() {
             </svg>
             Google Sheets에서 상세 데이터 보기
           </a>
+
+          {clicksSubTab === "vote" && (<>
 
           {/* 전체 통계 */}
           <div className="bg-surface rounded-2xl p-4 border border-border/30">
@@ -543,6 +568,82 @@ export function AdminPanel() {
             </div>
             <Pagination page={userPage} totalPages={Math.ceil(filteredUsers.length / 10)} onChange={setUserPage} />
           </div>
+
+          </>)}
+
+          {/* Fake door clicks (result page CTA) */}
+          {clicksSubTab === "result" && fakeDoor && (
+            <>
+              <div className="bg-surface rounded-2xl p-4 border border-border/30 mt-4">
+                <h4 className="text-xs font-semibold text-muted mb-3">결과 페이크 도어 (TOP 10 비밀 전부 열기)</h4>
+                <div className="grid grid-cols-3 gap-3 text-center mb-3">
+                  <div>
+                    <p className="text-2xl font-black">{fakeDoor.total}</p>
+                    <p className="text-[10px] text-muted">총 클릭</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black">{fakeDoor.uniqueUsers}</p>
+                    <p className="text-[10px] text-muted">로그인 유저</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-black">{fakeDoor.uniqueAnon}</p>
+                    <p className="text-[10px] text-muted">비로그인</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-surface rounded-2xl p-4 border border-border/30">
+                <h4 className="text-xs font-semibold text-muted mb-3">소스별 클릭</h4>
+                {fakeDoor.bySource.length === 0 ? (
+                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {fakeDoor.bySource.map((s) => (
+                      <div key={s.source} className="flex items-center justify-between text-xs py-1">
+                        <span className="font-mono text-muted truncate flex-1">{s.source}</span>
+                        <span className="font-bold ml-2">{s.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-surface rounded-2xl p-4 border border-border/30">
+                <h4 className="text-xs font-semibold text-muted mb-3">사진별 클릭 ({fakeDoor.byPhoto.length}개)</h4>
+                {fakeDoor.byPhoto.length === 0 ? (
+                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {fakeDoor.byPhoto.slice(0, 20).map((p) => (
+                      <div key={p.photo_id} className="flex items-center gap-2 py-1">
+                        <span className={`text-[10px] font-bold w-10 ${p.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                          {p.school === "yonsei" ? "연세대" : "고려대"}
+                        </span>
+                        <span className="text-xs flex-1 truncate">{p.nickname}</span>
+                        <span className="text-xs font-bold">{p.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-surface rounded-2xl p-4 border border-border/30">
+                <h4 className="text-xs font-semibold text-muted mb-3">사용자별 클릭 ({fakeDoor.byUser.length}명)</h4>
+                {fakeDoor.byUser.length === 0 ? (
+                  <p className="text-xs text-muted text-center py-3">기록 없음</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {fakeDoor.byUser.slice(0, 20).map((u) => (
+                      <div key={u.user_id} className="flex items-center gap-2 py-1">
+                        <span className="text-xs flex-1 truncate">{u.email}</span>
+                        <span className="text-xs font-bold">{u.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 

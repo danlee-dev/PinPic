@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { joinWaitlist } from "@/lib/waitlist";
 import { trackEvent } from "@/lib/analytics";
+import { recordFakeDoorClick } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 
 interface FakeDoorModalProps {
@@ -48,6 +49,7 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
 
   const handleStartEmail = () => {
     trackEvent("fake_door_pitch_continue", { source });
+    recordFakeDoorClick({ source: `${source}__pitch_continue` });
     setStep("email");
   };
 
@@ -63,6 +65,7 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
     }
     setPosition(result.position ?? null);
     trackEvent("fake_door_email_submit", { source, already_joined: result.alreadyJoined ? "1" : "0" });
+    recordFakeDoorClick({ source: `${source}__email_submit` });
     setStep("thanks");
   };
 

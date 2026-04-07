@@ -5,7 +5,7 @@ import { PhotoEntry, VotingPeriod, RevealMode } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
 import { useAuth } from "./auth-provider";
 import { trackEvent } from "@/lib/analytics";
-import { recordPhotoClick, recordPhotoView } from "@/lib/api";
+import { recordPhotoClick, recordPhotoView, recordFakeDoorClick } from "@/lib/api";
 import { FakeDoorModal } from "./fake-door-modal";
 
 interface PhotoModalProps {
@@ -295,7 +295,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
 
               {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
               <button
-                onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); }}
+                onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); recordFakeDoorClick({ source: "photo_modal", photoId: entry.id }); }}
                 className="relative w-full h-12 px-5 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
                 style={{
                   background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
