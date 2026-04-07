@@ -352,6 +352,13 @@ export function MasonryGallery() {
           // 3) Exploration Bonus with quality gate
           // Raw exploration: high for low-vote photos
           const rawExploration = 1 / (1 + votes / Math.max(avgVotes, 1));
+
+          // 3b) Mid-tier Boost: gaussian around average votes
+          // Surfaces decent photos that are neither viral nor unknown
+          const midTarget = Math.max(avgVotes, 1);
+          const midRange = Math.max(avgVotes * 0.5, 1);
+          const midDiff = (votes - midTarget) / midRange;
+          const midBoost = Math.exp(-midDiff * midDiff);
           // Quality gate: photos below 30% of average votes get dampened exploration
           // Prevents persistently low-quality photos from hogging top spots
           const qualityThreshold = avgVotes * 0.3;
@@ -418,7 +425,7 @@ export function MasonryGallery() {
           s ^= s << 13; s ^= s >> 17; s ^= s << 5;
           const jitter = 0.85 + ((s >>> 0) / 4294967296) * 0.3;
 
-          const score = (wilson * 0.4 + timeBoost * 0.25 + exploration * 0.35) * velocityPenalty * votedDemote * jitter;
+          const score = (wilson * 0.35 + timeBoost * 0.2 + exploration * 0.25 + midBoost * 0.2) * velocityPenalty * votedDemote * jitter;
 
           return { entry, score };
         });
