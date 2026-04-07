@@ -266,12 +266,12 @@ export async function fetchResultStats(): Promise<ResultStats> {
     fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
   ]);
 
-  // No admin filtering — show every row including admin self-clicks while
-  // we validate the funnel. Filter post-event when reporting.
-  void adminRows;
-  const safeOpens = opens;
-  const safeFD = fd;
-  const safeWL = waitlist;
+  // Filter out admin self-traffic so the metrics reflect real user behaviour
+  const adminIds = new Set(adminRows.map((a) => a.user_id));
+  const isNotAdmin = (uid: string | null) => !uid || !adminIds.has(uid);
+  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id));
+  const safeFD = fd.filter((f) => isNotAdmin(f.user_id));
+  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id));
 
   const photoMap = new Map<string, PhotoMeta>();
   photos.forEach((p) => photoMap.set(p.id, p));
@@ -493,13 +493,12 @@ export async function fetchAnalyticsInsights(): Promise<AnalyticsInsights> {
     fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
   ]);
 
-  // No admin filtering here so the analysis tab shows the same totals as
-  // the result tab. Admin self-clicks are visible while we are validating
-  // the funnel; they will get filtered out post-event for clean reporting.
-  void adminRows;
-  const safeOpens = opens;
-  const safeFD = fakeDoor;
-  const safeWL = waitlist;
+  // Filter out admin self-traffic so the metrics reflect real user behaviour
+  const adminIds = new Set(adminRows.map((a) => a.user_id));
+  const isNotAdmin = (uid: string | null) => !uid || !adminIds.has(uid);
+  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id));
+  const safeFD = fakeDoor.filter((f) => isNotAdmin(f.user_id));
+  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id));
 
   const photoMap = new Map<string, PhotoMeta>();
   photos.forEach((p) => photoMap.set(p.id, p));
