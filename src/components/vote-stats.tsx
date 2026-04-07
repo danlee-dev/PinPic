@@ -805,19 +805,6 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIdx, entries.length]);
 
-  // Re-snap when the carousel layout itself changes (fonts/images settle).
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || entries.length === 0 || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => {
-      scrollToIdx(activeIdx, false);
-    });
-    ro.observe(el);
-    cardRefs.current.forEach((c) => c && ro.observe(c));
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIdx, entries.length]);
-
   // Auto-advance every 2.5s: 1 → 2 → 3 → 1 → 2 → 3 → ...
   // After the last card, jump straight back to the first.
   useEffect(() => {
@@ -906,29 +893,19 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
       {entries.map((entry, i) => {
         const rank = i + 1;
         return (
-          // Outer wrapper holds layout (offsetLeft / offsetWidth used by scrollToIdx)
-          // Inner wrapper handles the visual scale + opacity so transform never
-          // shifts the element away from its measured center.
           <div
             key={entry.id}
             ref={(el) => { cardRefs.current[i] = el; }}
-            className="shrink-0 w-[76%]"
+            className="shrink-0 w-[76%] transition-transform duration-300"
+            style={{ transform: i === activeIdx ? "scale(1)" : "scale(0.92)", opacity: i === activeIdx ? 1 : 0.55 }}
           >
-            <div
-              className="transition-all duration-300 origin-center"
-              style={{
-                transform: i === activeIdx ? "scale(1)" : "scale(0.92)",
-                opacity: i === activeIdx ? 1 : 0.55,
-              }}
-            >
-              <TopCard
-                entry={entry}
-                rank={rank}
-                variant="hero"
-                onPhotoClick={onPhotoClick}
-                onUnlock={() => onUnlock(rank, entry.id)}
-              />
-            </div>
+            <TopCard
+              entry={entry}
+              rank={rank}
+              variant="hero"
+              onPhotoClick={onPhotoClick}
+              onUnlock={() => onUnlock(rank, entry.id)}
+            />
           </div>
         );
       })}
