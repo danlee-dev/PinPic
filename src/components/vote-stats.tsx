@@ -395,7 +395,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
-              TOP 10 비밀 전부 열기
+              TOP 10 비밀 (장소·세팅값) 전부 열기
             </span>
             <span className="relative flex items-center gap-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
               <span className="text-[14px] font-black">₩990</span>
@@ -715,19 +715,12 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
               height={isHero ? 11 : 9}
               viewBox="0 0 24 24"
               fill="none"
+              stroke="#6aa3ff"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               className="block shrink-0"
-              style={{ stroke: `url(#unlockGrad-${rank})` }}
             >
-              <defs>
-                <linearGradient id={`unlockGrad-${rank}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#6aa3ff" />
-                  <stop offset="50%" stopColor="#ffffff" />
-                  <stop offset="100%" stopColor="#ff5b78" />
-                </linearGradient>
-              </defs>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
