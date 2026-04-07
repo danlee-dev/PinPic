@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { joinWaitlist } from "@/lib/waitlist";
 import { trackEvent } from "@/lib/analytics";
 import { createClient } from "@/utils/supabase/client";
@@ -81,7 +82,9 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
     }
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-modal-overlay-in"
       onClick={handleDismiss}
@@ -244,7 +247,8 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
           </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
