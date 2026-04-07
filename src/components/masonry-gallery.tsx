@@ -562,20 +562,41 @@ export function MasonryGallery() {
                 </picture>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
                   {showResults ? (
-                    <button
-                      onClick={() => setActiveTab("stats")}
-                      className="relative overflow-hidden text-black text-[12px] font-bold px-5 py-2 rounded-full cursor-pointer animate-result-cta flex items-center gap-1.5"
-                      style={{
-                        background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-                        border: "1px solid rgba(255,255,255,0.35)",
-                      }}
-                    >
-                      <span className="relative z-10">순위 확인하기</span>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                      <span className="absolute inset-0 animate-result-cta-shimmer pointer-events-none" />
-                    </button>
+                    <div className="relative">
+                      <span className="animate-result-cta-glow" />
+                      <button
+                        onClick={() => setActiveTab("stats")}
+                        className="relative overflow-hidden text-white text-[12px] font-bold px-5 h-9 rounded-full cursor-pointer animate-result-cta flex items-center gap-1.5"
+                        style={{
+                          background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
+                          boxShadow:
+                            "inset 0 2px 4px rgba(255,255,255,0.25), " +
+                            "inset 0 -2px 4px rgba(0,0,0,0.45), " +
+                            "inset 0 0 0 1px rgba(255,255,255,0.12), " +
+                            "0 8px 22px rgba(0,0,0,0.55)",
+                        }}
+                      >
+                        <div
+                          className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+                          style={{
+                            background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                            borderRadius: "9999px 9999px 0 0",
+                          }}
+                        />
+                        <div
+                          className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+                          style={{
+                            background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                            borderRadius: "0 0 9999px 9999px",
+                          }}
+                        />
+                        <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">순위 확인하기</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
+                        <span className="absolute inset-0 animate-result-cta-shimmer pointer-events-none" />
+                      </button>
+                    </div>
                   ) : (
                     <span className="bg-black/70 backdrop-blur-sm text-white text-[11px] font-semibold px-4 py-1.5 rounded-full border border-white/15">
                       결과 발표 4월 8일

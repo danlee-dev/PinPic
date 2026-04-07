@@ -8,13 +8,13 @@ interface CountUpProps {
   delay?: number; // ms
   className?: string;
   format?: (n: number) => string;
+  onComplete?: () => void;
 }
 
-export function CountUp({ to, duration = 1400, delay = 0, className, format }: CountUpProps) {
+export function CountUp({ to, duration = 1400, delay = 0, className, format, onComplete }: CountUpProps) {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
-    // Skip animation entirely if there is nothing to count
     if (to <= 0) {
       setValue(0);
       return;
@@ -31,7 +31,11 @@ export function CountUp({ to, duration = 1400, delay = 0, className, format }: C
         const t = Math.min(elapsed / duration, 1);
         const eased = easeOut(t);
         setValue(Math.round(startFrom + (to - startFrom) * eased));
-        if (t < 1) raf = requestAnimationFrame(tick);
+        if (t < 1) {
+          raf = requestAnimationFrame(tick);
+        } else {
+          onComplete?.();
+        }
       };
       raf = requestAnimationFrame(tick);
     }, delay);
@@ -40,7 +44,7 @@ export function CountUp({ to, duration = 1400, delay = 0, className, format }: C
       clearTimeout(timer);
       cancelAnimationFrame(raf);
     };
-  }, [to, duration, delay]);
+  }, [to, duration, delay, onComplete]);
 
   return <span className={className}>{format ? format(value) : value.toLocaleString()}</span>;
 }

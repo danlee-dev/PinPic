@@ -308,7 +308,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
               <button
                 onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); }}
-                className="relative w-full h-12 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
+                className="relative w-full h-12 px-5 rounded-2xl text-sm font-bold text-white overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
                 style={{
                   background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
                   boxShadow:
@@ -332,7 +332,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
                     borderRadius: "0 0 16px 16px",
                   }}
                 />
-                <span className="relative flex items-center justify-between gap-2 px-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+                <span className="relative flex items-center justify-between gap-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
                   <span className="flex items-center gap-2">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
