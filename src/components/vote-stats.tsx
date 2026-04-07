@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PhotoEntry, RevealMode } from "@/lib/types";
 import { ConfettiBurst } from "./confetti-burst";
 import { FakeDoorModal } from "./fake-door-modal";
+import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
 
 interface VoteStatsProps {
@@ -440,6 +441,21 @@ function LockIcon({ name }: { name: LockIconKey }) {
   }
 }
 
+function OverlayLockedRow({ icon, label }: { icon: LockIconKey; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-[9px] leading-none">
+      <span className="text-white/70 shrink-0"><LockIcon name={icon} /></span>
+      <span className="text-white/60 font-semibold w-9 shrink-0">{label}</span>
+      <span
+        className="flex-1 truncate text-white/80"
+        style={{ filter: "blur(4px)", WebkitFilter: "blur(4px)" }}
+      >
+        잠긴 정보
+      </span>
+    </div>
+  );
+}
+
 function LockedRow({ icon, label, placeholder }: { icon: LockIconKey; label: string; placeholder: string }) {
   return (
     <div className="flex items-center gap-2.5 text-[11px]">
@@ -466,7 +482,6 @@ interface TopCardProps {
 function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps) {
   const isHero = variant === "hero";
   const isPodium = variant === "podium";
-  const isGrid = variant === "grid";
 
   return (
     <div
@@ -477,97 +492,141 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
         background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%)",
       }}
     >
-      {/* Header: rank + school + votes */}
-      <div className={`flex items-center justify-between ${isHero ? "px-5 pt-4 pb-3" : "px-3.5 pt-3 pb-2"}`}>
-        <div className="flex items-center gap-2 min-w-0">
-          {rank === 1 && (
-            <svg
-              width={isHero ? 22 : 16}
-              height={isHero ? 22 : 16}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-foreground shrink-0"
-              aria-label="1st place"
-            >
-              <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
-              <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
-              <path d="M4 22h16" />
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-              <path d="M18 2H6v7a6 6 0 0012 0V2z" />
-            </svg>
-          )}
-          <span className={`font-black text-foreground/85 ${isHero ? "text-[22px]" : isPodium ? "text-[18px]" : "text-[15px]"}`}>
-            #{rank}
-          </span>
-          <span className={`font-bold uppercase tracking-wider truncate ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"} ${isHero ? "text-[11px]" : "text-[9px]"}`}>
-            {entry.school === "yonsei" ? "연세대" : "고려대"}
-          </span>
-        </div>
-        <div className="text-right shrink-0">
-          <p className={`font-black ${isHero ? "text-[18px]" : isPodium ? "text-[14px]" : "text-[12px]"}`}>
-            {entry.votes.toLocaleString()}
-            <span className={`font-medium text-muted ml-0.5 ${isHero ? "text-[11px]" : "text-[9px]"}`}>표</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Photo (always sharp) */}
+      {/* Photo (always sharp). All cards: header overlaid on top, author + locked meta on bottom.
+          Wide photos are letterboxed inside a 4:5 card with a self-blurred background fill,
+          so meta overlays never crop the subject. */}
+      {(() => {
+        const imgAspect = entry.aspect_ratio || 0.8;
+        const maxCardAspect = 0.8; // never wider than 4:5
+        const useFill = imgAspect > maxCardAspect;
+        const cardAspect = useFill ? maxCardAspect : imgAspect;
+        const src = entry.thumb_url || entry.image_url;
+        return (
       <button
         onClick={() => onPhotoClick(entry)}
-        className="relative w-full block cursor-pointer active:opacity-95 transition-opacity"
+        className="relative w-full block cursor-pointer active:opacity-95 transition-opacity overflow-hidden"
+        style={{ aspectRatio: `${cardAspect}` }}
       >
+        {useFill && (
+          <>
+            <img
+              src={src}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 w-full h-full object-cover scale-125"
+              style={{ filter: "blur(28px) saturate(1.1)", WebkitFilter: "blur(28px) saturate(1.1)" }}
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-black/20" />
+          </>
+        )}
         <img
-          src={entry.thumb_url || entry.image_url}
+          src={src}
           alt={entry.nickname}
-          className="w-full block"
+          className={useFill ? "absolute inset-0 w-full h-full object-contain" : "relative w-full h-full object-cover block"}
           draggable={false}
         />
-      </button>
 
-      {/* Author */}
-      <div className={`${isHero ? "px-5 pt-3 pb-2" : "px-3.5 pt-2.5 pb-2"}`}>
-        <p className={`font-bold truncate ${isHero ? "text-[14px]" : isPodium ? "text-[12px]" : "text-[11px]"}`}>{entry.nickname}</p>
-        {entry.club && !isGrid && (
-          <p className={`text-muted mt-0.5 truncate ${isHero ? "text-[10px]" : "text-[9px]"}`}>{entry.club}</p>
-        )}
-      </div>
-
-      {/* Locked metadata — flush with card, separated by hairline only */}
-      <div className={`${isHero ? "px-5 pt-3 pb-3" : "px-3.5 pt-2.5 pb-3"} border-t border-white/5 select-none`} aria-hidden>
-        <div className={`${isHero ? "space-y-1.5" : "space-y-1"}`}>
-          {isHero ? (
-            <>
-              <LockedRow icon="pin" label="촬영지" placeholder="홍대입구역 8번 출구" />
-              <LockedRow icon="camera" label="카메라" placeholder="Sony A7C II" />
-              <LockedRow icon="lens" label="렌즈" placeholder="35mm F1.4 GM" />
-              <LockedRow icon="settings" label="세팅값" placeholder="f/1.8 · 1/250s · ISO 400" />
-              <LockedRow icon="edit" label="보정" placeholder="VSCO A6 · Highlights -30" />
-              <LockedRow icon="quote" label="작가의 말" placeholder="이 한 컷을 위해 세 번을 갔어요" />
-            </>
-          ) : (
-            <>
-              <LockedRow icon="pin" label="촬영지" placeholder="잠긴 정보" />
-              <LockedRow icon="camera" label="카메라" placeholder="잠긴 정보" />
-              <LockedRow icon="settings" label="세팅값" placeholder="잠긴 정보" />
-            </>
-          )}
+        {/* Top dark gradient + header (rank, school badge, votes) */}
+        <div className="absolute inset-x-0 top-0 pointer-events-none"
+          style={{
+            height: isHero ? "30%" : "33%",
+            background: "linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 60%, transparent 100%)",
+          }} />
+        <div className={`absolute inset-x-0 top-0 flex items-center justify-between select-none ${isHero ? "px-4 pt-3.5 pb-3" : "px-3 pt-2.5 pb-2"}`}>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {rank === 1 && (
+              <svg
+                width={isHero ? 22 : 16}
+                height={isHero ? 22 : 16}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-white shrink-0"
+                style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))" }}
+                aria-label="1st place"
+              >
+                <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                <path d="M18 2H6v7a6 6 0 0012 0V2z" />
+              </svg>
+            )}
+            <span
+              className={`font-black text-white ${isHero ? "text-[24px]" : isPodium ? "text-[16px]" : "text-[14px]"}`}
+              style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}
+            >
+              #{rank}
+            </span>
+            <SchoolBadge school={entry.school} size="sm" />
+          </div>
+          <p
+            className={`font-black text-white shrink-0 ${isHero ? "text-[18px]" : isPodium ? "text-[13px]" : "text-[12px]"}`}
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}
+          >
+            {entry.votes.toLocaleString()}
+            <span className={`font-medium text-white/80 ml-0.5 ${isHero ? "text-[11px]" : "text-[9px]"}`}>표</span>
+          </p>
         </div>
-      </div>
-      <button
-        onClick={onUnlock}
-        className="w-full py-3 text-[11px] font-bold text-[#ffd166] hover:bg-white/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none"
-      >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-          <path d="M7 11V7a5 5 0 0110 0v4" />
-        </svg>
-        <span className="leading-none">TOP 10 비밀 전부 열기</span>
+
+        {/* Bottom dark gradient + author + locked meta + unlock CTA */}
+        <div className="absolute inset-x-0 bottom-0 pointer-events-none"
+          style={{
+            height: isHero ? "62%" : "70%",
+            background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.95) 100%)",
+          }} />
+        <div className={`absolute inset-x-0 bottom-0 select-none ${isHero ? "px-5 pb-4 pt-4" : "px-3 pb-3 pt-3"}`}>
+          <p
+            className={`font-bold text-white truncate ${isHero ? "text-[19px]" : isPodium ? "text-[15px]" : "text-[14px]"}`}
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}
+          >
+            {entry.nickname}
+          </p>
+          {entry.club && isHero && (
+            <p className="text-white/70 mt-0.5 truncate text-[11px]" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}>
+              {entry.club}
+            </p>
+          )}
+          <div className={`mt-2 ${isHero ? "space-y-1" : "space-y-0.5"}`} aria-hidden>
+            {isHero ? (
+              <>
+                <OverlayLockedRow icon="pin" label="촬영지" />
+                <OverlayLockedRow icon="camera" label="카메라" />
+                <OverlayLockedRow icon="lens" label="렌즈" />
+                <OverlayLockedRow icon="settings" label="세팅값" />
+                <OverlayLockedRow icon="edit" label="보정" />
+                <OverlayLockedRow icon="quote" label="작가의 말" />
+              </>
+            ) : (
+              <>
+                <OverlayLockedRow icon="pin" label="촬영지" />
+                <OverlayLockedRow icon="camera" label="카메라" />
+                <OverlayLockedRow icon="settings" label="세팅값" />
+              </>
+            )}
+          </div>
+
+          {/* Unlock CTA — overlaid inside the photo area */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onUnlock(); }}
+            className={`mt-2.5 w-full ${isHero ? "py-2.5" : "py-2"} text-[#ffd166] font-bold rounded-xl border border-[#ffd166]/30 bg-black/40 hover:bg-black/55 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none ${isHero ? "text-[12px]" : "text-[10px]"}`}
+            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}
+          >
+            <svg width={isHero ? 12 : 10} height={isHero ? 12 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+            <span className="leading-none">TOP 10 비밀 전부 열기</span>
+          </button>
+        </div>
       </button>
+        );
+      })()}
     </div>
   );
 }
