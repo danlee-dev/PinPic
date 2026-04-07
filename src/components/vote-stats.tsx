@@ -322,25 +322,44 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
         <div className="mt-5 mb-1 flex justify-center">
           <button
             onClick={() => openFakeDoor("inline_bar")}
-            className="relative w-full flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
+            className="relative w-full flex items-center justify-between gap-3 px-5 h-14 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
             style={{
-              background:
-                "linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)) padding-box, " +
-                "linear-gradient(135deg, #1a6dff 0%, rgba(255,255,255,0.15) 50%, #e8193e 100%) border-box",
-              border: "1.5px solid transparent",
-              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 6px 18px rgba(26,109,255,0.18), 0 6px 18px rgba(232,25,62,0.18)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
+              background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              boxShadow:
+                "inset 0 2px 4px rgba(255,255,255,0.25), " +
+                "inset 0 -2px 4px rgba(0,0,0,0.45), " +
+                "inset 0 0 0 1px rgba(255,255,255,0.06), " +
+                "0 10px 28px rgba(0,0,0,0.5), " +
+                "0 4px 14px rgba(26,109,255,0.35), " +
+                "0 4px 14px rgba(232,25,62,0.35)",
             }}
           >
-            <span className="flex items-center gap-2">
+            {/* Top convex highlight */}
+            <div
+              className="absolute inset-x-0 top-0 h-1/2 pointer-events-none"
+              style={{
+                background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.04) 60%, transparent 100%)",
+                borderRadius: "9999px 9999px 0 0",
+              }}
+            />
+            {/* Bottom shadow for depth */}
+            <div
+              className="absolute inset-x-0 bottom-0 h-1/3 pointer-events-none"
+              style={{
+                background: "linear-gradient(0deg, rgba(0,0,0,0.3) 0%, transparent 100%)",
+                borderRadius: "0 0 9999px 9999px",
+              }}
+            />
+
+            <span className="relative flex items-center gap-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0110 0v4" />
               </svg>
               TOP 10 비밀 전부 열기
             </span>
-            <span className="flex items-center gap-1">
+            <span className="relative flex items-center gap-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
               <span className="text-[14px] font-black">₩990</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
