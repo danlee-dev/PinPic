@@ -6,6 +6,7 @@ import { SchoolBadge } from "./school-badge";
 import { useAuth } from "./auth-provider";
 import { trackEvent } from "@/lib/analytics";
 import { recordPhotoClick, recordPhotoView } from "@/lib/api";
+import { FakeDoorModal } from "./fake-door-modal";
 
 interface PhotoModalProps {
   entry: PhotoEntry | null;
@@ -304,75 +305,37 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
                 </div>
               </div>
 
-              {/* Top 5 only: ad-gated camera settings button */}
-              {isTopRank && (
-                <button
-                  onClick={() => { setShowAdGate(true); trackEvent("ad_gate_click", { photo_id: entry.id }); }}
-                  className="relative w-full py-3 rounded-2xl text-sm font-semibold text-black overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
-                  style={{
-                    background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
-                    boxShadow: "0 4px 16px rgba(255,170,0,0.3)",
-                  }}
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="23 7 16 12 23 17 23 7" />
-                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+              {/* Fake door — shown for ALL photos in reveal mode (intentional, hides which photos are top10) */}
+              <button
+                onClick={() => { setShowAdGate(true); trackEvent("fake_door_click", { source: "photo_modal", photo_id: entry.id }); }}
+                className="relative w-full py-3.5 rounded-2xl text-sm font-bold text-black overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
+                style={{
+                  background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
+                  boxShadow: "0 6px 20px rgba(255,170,0,0.35)",
+                }}
+              >
+                <span className="flex items-center justify-between gap-2 px-2">
+                  <span className="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0110 0v4" />
                     </svg>
-                    광고 보고 카메라 설정값 보기
+                    TOP 10 비밀 전부 열기
                   </span>
-                  <span className="absolute top-1 right-2 text-[9px] font-bold text-black/60">AD</span>
-                </button>
-              )}
+                  <span className="flex items-center gap-1">
+                    <span className="text-[14px] font-black">₩990</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </span>
+                </span>
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {showAdGate && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-modal-overlay-in" onClick={() => setShowAdGate(false)}>
-          <div
-            className="relative bg-card rounded-[28px] px-7 pt-8 pb-6 max-w-[320px] w-full border border-white/8 animate-modal-in overflow-hidden"
-            style={{ boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 2px 0 rgba(255,255,255,0.05) inset" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Subtle corner glow */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-40 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, rgba(255,200,100,0.25) 0%, transparent 70%)" }} />
-
-            {/* Small label badge */}
-            <div className="relative flex justify-center mb-5">
-              <span className="text-[10px] font-semibold tracking-[0.15em] text-muted/90 uppercase px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.03]">
-                Coming soon
-              </span>
-            </div>
-
-            {/* Clean lined icon, no gradient box */}
-            <div className="relative flex justify-center mb-5">
-              <svg width="44" height="44" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/85">
-                <path d="M6 14a3 3 0 013-3h6l3-4h12l3 4h6a3 3 0 013 3v22a3 3 0 01-3 3H9a3 3 0 01-3-3V14z" />
-                <circle cx="24" cy="25" r="8" />
-                <circle cx="24" cy="25" r="3" />
-                <circle cx="38" cy="16" r="0.8" fill="currentColor" />
-              </svg>
-            </div>
-
-            <h3 className="relative text-[17px] font-bold text-center tracking-tight mb-2">
-              카메라 설정값 공개 준비 중
-            </h3>
-            <p className="relative text-[12px] text-muted text-center leading-relaxed mb-6">
-              작가가 사용한 조리개, 셔터스피드, ISO 등<br />
-              촬영 설정 정보가 곧 공개될 예정이에요.
-            </p>
-
-            <button
-              onClick={() => setShowAdGate(false)}
-              className="relative w-full py-3 bg-white/[0.06] hover:bg-white/[0.1] text-foreground text-[13px] font-semibold rounded-2xl cursor-pointer active:scale-[0.97] transition-all border border-white/10"
-            >
-              알겠어요
-            </button>
-          </div>
-        </div>
-      )}
+      <FakeDoorModal open={showAdGate} onClose={() => setShowAdGate(false)} source="photo_modal" />
 
       {showInfoTeaser && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-modal-overlay-in" onClick={() => setShowInfoTeaser(false)}>
