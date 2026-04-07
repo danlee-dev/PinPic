@@ -317,11 +317,44 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
       </div>
       )}
 
+      {/* Inline fake-door CTA bar between hero and ranking (revealed only) */}
+      {revealed && (
+        <div className="mt-5 mb-1 flex justify-center">
+          <button
+            onClick={() => openFakeDoor("inline_bar")}
+            className="relative w-full flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
+            style={{
+              background:
+                "linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)) padding-box, " +
+                "linear-gradient(135deg, #1a6dff 0%, rgba(255,255,255,0.15) 50%, #e8193e 100%) border-box",
+              border: "1.5px solid transparent",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 6px 18px rgba(26,109,255,0.18), 0 6px 18px rgba(232,25,62,0.18)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+              TOP 10 비밀 전부 열기
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="text-[14px] font-black">₩990</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* Ranking */}
       <div className="mt-6 animate-card-rise" style={{ animationDelay: "0.4s" }}>
         <h3 className="text-sm font-semibold mb-3">
           {revealed ? "최종 인기 순위" : "인기 순위"}
-          {revealMode === "preview" && <span className="ml-2 text-[10px] font-normal text-yellow-400">(미리보기)</span>}
+          {revealMode === "preview" && <span className="ml-2 text-[10px] font-normal text-red-400">(미리보기)</span>}
         </h3>
         {revealed ? (
           <div className="pb-28">
@@ -401,39 +434,6 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
           </div>
         )}
       </div>
-
-      {/* Sticky fake-door CTA bar (only when revealed) */}
-      {revealed && (
-        <div className="fixed inset-x-0 bottom-24 z-30 flex justify-center px-4 pointer-events-none">
-          <button
-            onClick={() => openFakeDoor("sticky_bar")}
-            className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(rgba(0,0,0,0.78), rgba(0,0,0,0.78)) padding-box, " +
-                "linear-gradient(135deg, #1a6dff 0%, rgba(255,255,255,0.15) 50%, #e8193e 100%) border-box",
-              border: "1.5px solid transparent",
-              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 6px 18px rgba(26,109,255,0.18), 0 6px 18px rgba(232,25,62,0.18)",
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-            }}
-          >
-            <span className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0110 0v4" />
-              </svg>
-              TOP 10 비밀 전부 열기
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="text-[14px] font-black">₩990</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </span>
-          </button>
-        </div>
-      )}
 
       <FakeDoorModal open={fakeDoorOpen} onClose={() => setFakeDoorOpen(false)} source={fakeDoorSource} />
     </div>
