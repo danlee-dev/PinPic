@@ -728,14 +728,17 @@ function TopThreeCarousel({ entries, onPhotoClick, onUnlock }: TopThreeCarouselP
   const resumeTimerRef = useRef<number | null>(null);
   const settleTimerRef = useRef<number | null>(null);
 
-  // Smoothly scroll a given index to the horizontal center of the container
+  // Smoothly scroll a given index to the horizontal center of the container.
+  // Uses scrollIntoView with inline:center so the browser handles padding/gap
+  // arithmetic and lands exactly on the viewport center every time.
   const scrollToIdx = (idx: number, smooth = true) => {
-    const el = scrollRef.current;
     const card = cardRefs.current[idx];
-    if (!el || !card) return;
-    const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-    const target = cardCenter - el.clientWidth / 2;
-    el.scrollTo({ left: target, behavior: smooth ? "smooth" : "auto" });
+    if (!card) return;
+    card.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      inline: "center",
+      block: "nearest",
+    });
   };
 
   // Center the first card on mount
