@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
-import { PhotoWithVotesRow, VotingPeriod, AdminUser } from "./types";
+import { PhotoWithVotesRow, VotingPeriod, AdminUser, ResultAnnouncement } from "./types";
 
 function getSupabase() {
   return createClient();
@@ -33,6 +33,33 @@ export async function fetchVotingPeriod(): Promise<VotingPeriod | null> {
 
   if (!data) return null;
   return data.value as VotingPeriod;
+}
+
+export async function fetchResultAnnouncement(): Promise<ResultAnnouncement | null> {
+  const supabase = getSupabase();
+  const { data } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "result_announcement")
+    .single();
+
+  if (!data) return null;
+  return data.value as ResultAnnouncement;
+}
+
+export async function updateResultAnnouncement(reveal_at: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const { error } = await supabase
+    .from("app_settings")
+    .update({ value: { reveal_at }, updated_at: new Date().toISOString() })
+    .eq("key", "result_announcement");
+
+  return !error;
+}
+
+export function isResultRevealed(announcement: ResultAnnouncement | null): boolean {
+  if (!announcement) return false;
+  return new Date() >= new Date(announcement.reveal_at);
 }
 
 export async function updateVotingPeriod(start: string, end: string): Promise<boolean> {

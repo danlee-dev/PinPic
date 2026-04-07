@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { PhotoWithVotesRow, AdminUser, VotingPeriod } from "@/lib/types";
+import { PhotoWithVotesRow, AdminUser, VotingPeriod, ResultAnnouncement } from "@/lib/types";
 import {
   fetchPendingPhotos,
   fetchAllPhotosAdmin,
@@ -10,15 +10,69 @@ import {
   deletePhoto,
   fetchVotingPeriod,
   updateVotingPeriod,
+  fetchResultAnnouncement,
+  updateResultAnnouncement,
   fetchAdmins,
   addAdmin,
   removeAdmin,
   fetchEngagementStats,
   EngagementStats,
 } from "@/lib/admin";
+import { getRevealPreview, setRevealPreview } from "@/lib/reveal-preview";
 import { SchoolBadge } from "./school-badge";
 
 type AdminTab = "pending" | "photos" | "clicks" | "settings";
+
+function Pagination({ page, totalPages, onChange }: { page: number; totalPages: number; onChange: (p: number) => void }) {
+  if (totalPages <= 1) return null;
+  const current = page + 1; // 1-indexed for display
+  const items: (number | "...")[] = [];
+  const add = (v: number | "...") => { if (items[items.length - 1] !== v) items.push(v); };
+  add(1);
+  for (let i = current - 1; i <= current + 1; i++) {
+    if (i > 1 && i < totalPages) {
+      if (i > 2 && items[items.length - 1] !== i - 1 && items[items.length - 1] !== "...") add("...");
+      add(i);
+    }
+  }
+  if (current + 1 < totalPages - 1) add("...");
+  if (totalPages > 1) add(totalPages);
+
+  const btnBase = "min-w-7 h-7 px-2 rounded-lg text-xs font-medium cursor-pointer transition-colors flex items-center justify-center";
+  return (
+    <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
+      <button
+        onClick={() => onChange(Math.max(0, page - 1))}
+        disabled={page === 0}
+        className={`${btnBase} text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
+        aria-label="이전 페이지"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+      </button>
+      {items.map((it, idx) =>
+        it === "..." ? (
+          <span key={`e${idx}`} className="min-w-7 h-7 flex items-center justify-center text-xs text-muted">…</span>
+        ) : (
+          <button
+            key={it}
+            onClick={() => onChange(it - 1)}
+            className={`${btnBase} ${current === it ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}
+          >
+            {it}
+          </button>
+        )
+      )}
+      <button
+        onClick={() => onChange(Math.min(totalPages - 1, page + 1))}
+        disabled={page === totalPages - 1}
+        className={`${btnBase} text-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed`}
+        aria-label="다음 페이지"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+      </button>
+    </div>
+  );
+}
 
 interface ConfirmAction {
   type: "reject" | "delete";
@@ -31,6 +85,9 @@ export function AdminPanel() {
   const [pending, setPending] = useState<PhotoWithVotesRow[]>([]);
   const [allPhotos, setAllPhotos] = useState<PhotoWithVotesRow[]>([]);
   const [period, setPeriod] = useState<VotingPeriod | null>(null);
+  const [announcement, setAnnouncement] = useState<ResultAnnouncement | null>(null);
+  const [editRevealAt, setEditRevealAt] = useState("");
+  const [previewMode, setPreviewModeState] = useState(false);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [photoSearch, setPhotoSearch] = useState("");
@@ -52,10 +109,11 @@ export function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [p, all, vp, adm, eng] = await Promise.all([
+    const [p, all, vp, ann, adm, eng] = await Promise.all([
       fetchPendingPhotos(),
       fetchAllPhotosAdmin(),
       fetchVotingPeriod(),
+      fetchResultAnnouncement(),
       fetchAdmins(),
       fetchEngagementStats(),
     ]);
@@ -63,11 +121,16 @@ export function AdminPanel() {
     setEngagement(eng);
     setAllPhotos(all);
     setPeriod(vp);
+    setAnnouncement(ann);
     setAdmins(adm);
     if (vp) {
       setEditStart(toKSTInput(vp.start));
       setEditEnd(toKSTInput(vp.end));
     }
+    if (ann) {
+      setEditRevealAt(toKSTInput(ann.reveal_at));
+    }
+    setPreviewModeState(getRevealPreview());
     setLoading(false);
   }, []);
 
@@ -107,6 +170,25 @@ export function AdminPanel() {
       await handleDelete(confirmAction.photoId);
     }
     setConfirmAction(null);
+  };
+
+  const handleSaveReveal = async () => {
+    if (!editRevealAt) return;
+    const reveal_at = new Date(editRevealAt + ":00+09:00").toISOString();
+    const ok = await updateResultAnnouncement(reveal_at);
+    if (ok) {
+      setAnnouncement({ reveal_at });
+      showMessage("결과 발표 시각 저장 완료");
+    } else {
+      showMessage("저장 실패");
+    }
+  };
+
+  const handleTogglePreview = () => {
+    const next = !previewMode;
+    setPreviewModeState(next);
+    setRevealPreview(next);
+    showMessage(next ? "미리보기 ON (관리자 전용)" : "미리보기 OFF");
   };
 
   const handleSavePeriod = async () => {
@@ -402,16 +484,7 @@ export function AdminPanel() {
                 </div>
               ))}
             </div>
-            {filteredPhotos.length > 10 && (
-              <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
-                {Array.from({ length: Math.ceil(filteredPhotos.length / 10) }, (_, i) => (
-                  <button key={i} onClick={() => setPhotoPage(i)}
-                    className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${photoPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
+            <Pagination page={photoPage} totalPages={Math.ceil(filteredPhotos.length / 10)} onChange={setPhotoPage} />
           </div>
 
           {/* 사용자별 */}
@@ -462,16 +535,7 @@ export function AdminPanel() {
                 </div>
               ))}
             </div>
-            {filteredUsers.length > 10 && (
-              <div className="flex items-center justify-center gap-1 mt-3 pt-3 border-t border-border/20">
-                {Array.from({ length: Math.ceil(filteredUsers.length / 10) }, (_, i) => (
-                  <button key={i} onClick={() => setUserPage(i)}
-                    className={`w-7 h-7 rounded-lg text-xs font-medium cursor-pointer transition-colors ${userPage === i ? "bg-white/15 text-foreground" : "text-muted hover:text-foreground"}`}>
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
+            <Pagination page={userPage} totalPages={Math.ceil(filteredUsers.length / 10)} onChange={setUserPage} />
           </div>
         </div>
       )}
@@ -508,6 +572,50 @@ export function AdminPanel() {
               >
                 저장
               </button>
+            </div>
+          </div>
+
+          {/* Result announcement */}
+          <div className="bg-surface rounded-2xl p-4 border border-border/30 overflow-hidden">
+            <h3 className="text-sm font-semibold mb-1">결과 발표 (KST)</h3>
+            <p className="text-[11px] text-muted mb-3">발표 시각이 지나면 모든 사용자에게 인기 순위와 상위 5개의 촬영 정보가 공개됩니다.</p>
+            <div className="space-y-2">
+              <div className="overflow-hidden">
+                <label className="text-xs text-muted block mb-1">발표 시각</label>
+                <input
+                  type="datetime-local"
+                  value={editRevealAt}
+                  onChange={(e) => setEditRevealAt(e.target.value)}
+                  className="w-full bg-black/30 text-sm text-foreground px-3 py-2 rounded-lg border border-border/50 outline-none"
+                  style={{ colorScheme: "dark", maxWidth: "100%", boxSizing: "border-box", WebkitAppearance: "none" }}
+                />
+              </div>
+              <button
+                onClick={handleSaveReveal}
+                className="w-full py-2 bg-white text-black text-sm font-semibold rounded-lg cursor-pointer hover:bg-white/90 active:scale-[0.98] transition-all"
+              >
+                저장
+              </button>
+              {announcement && (
+                <p className="text-[11px] text-muted text-center">
+                  현재 발표 시각: {formatKSTDisplay(announcement.reveal_at)}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-border/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold">결과 화면 미리보기</p>
+                  <p className="text-[10px] text-muted mt-0.5">관리자 본인에게만 발표 화면이 보입니다</p>
+                </div>
+                <button
+                  onClick={handleTogglePreview}
+                  className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${previewMode ? "bg-green-500" : "bg-white/15"}`}
+                >
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${previewMode ? "translate-x-5" : "translate-x-0.5"}`} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -613,4 +721,9 @@ function toKSTInput(utcStr: string): string {
   const d = new Date(utcStr);
   const kst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
   return kst.toISOString().slice(0, 16);
+}
+
+function formatKSTDisplay(utcStr: string): string {
+  const d = new Date(utcStr);
+  return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }

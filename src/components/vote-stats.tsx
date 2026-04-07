@@ -1,23 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PhotoEntry } from "@/lib/types";
-import { useAuth } from "./auth-provider";
+import { PhotoEntry, RevealMode } from "@/lib/types";
+import { ConfettiBurst } from "./confetti-burst";
 
 interface VoteStatsProps {
   entries: PhotoEntry[];
   votedIds: Set<string>;
   onPhotoClick: (entry: PhotoEntry) => void;
+  revealMode?: RevealMode;
 }
 
-export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
-  const { isAdmin } = useAuth();
+export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidden" }: VoteStatsProps) {
   const [animated, setAnimated] = useState(false);
+  const [confettiKey, setConfettiKey] = useState(0);
+  const revealed = revealMode !== "hidden";
 
   useEffect(() => {
     const t = setTimeout(() => setAnimated(true), 100);
     return () => clearTimeout(t);
   }, []);
+
+  // Replay confetti every time the user opens this tab in reveal mode
+  useEffect(() => {
+    if (revealed) setConfettiKey((k) => k + 1);
+  }, [revealed]);
 
   const yonseiEntries = entries.filter((e) => e.school === "yonsei");
   const koreaEntries = entries.filter((e) => e.school === "korea");
@@ -32,9 +39,72 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
   const yonseiVotedCount = yonseiEntries.filter((e) => votedIds.has(e.id)).length;
   const koreaVotedCount = koreaEntries.filter((e) => votedIds.has(e.id)).length;
 
+  const sortedByVotes = [...entries].sort((a, b) => b.votes - a.votes);
+  const winnerSchool: "yonsei" | "korea" | "tie" =
+    yonseiVotes === koreaVotes ? "tie" : (yonseiVotes > koreaVotes ? "yonsei" : "korea");
+
   return (
     <div className="max-w-3xl mx-auto px-4 pt-2 pb-28">
-      {/* Hero section with school color accents */}
+      {/* === REVEAL MODE: Hall of Fame Hero === */}
+      {revealed && (
+        <div className="relative rounded-3xl pt-7 pb-5 px-5 mb-5 overflow-hidden animate-card-rise"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(10,10,10,0.92) 50%, rgba(255,138,0,0.08) 100%)",
+          }}
+        >
+          <ConfettiBurst trigger={confettiKey} />
+          <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ border: "1px solid rgba(255,215,0,0.18)" }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: "radial-gradient(circle, #ffd700 0%, transparent 70%)" }} />
+
+          <div className="relative text-center">
+            <p className="text-[11px] font-bold tracking-[0.2em] text-yellow-300/90 uppercase mb-1">Hall of Fame</p>
+            <h2 className="text-3xl font-black tracking-tight mb-1">명예의 전당</h2>
+            <p className="text-xs text-muted mb-4">제1회 캠퍼스 사진 고연전 결과 발표</p>
+
+            {/* Slim, finalized vote bar */}
+            <div className="max-w-xs mx-auto">
+              <div className="flex items-center justify-between mb-1.5 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <img src="/yonsei-logo.png" alt="연세대" className="w-4 h-4 rounded-full object-cover" />
+                  <span className={`font-bold ${yonseiPct === 0 ? "text-muted" : "text-yonsei"}`}>{yonseiPct}%</span>
+                </div>
+                <span className="text-muted text-[10px]">최종 {totalVotes.toLocaleString()}표</span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`font-bold ${koreaPct === 0 ? "text-muted" : "text-korea"}`}>{koreaPct}%</span>
+                  <img src="/korea-logo.png" alt="고려대" className="w-4 h-4 object-contain" />
+                </div>
+              </div>
+              <div className="relative h-6 rounded-full overflow-hidden bg-[#1a1a1a]" style={{ boxShadow: "inset 0 1px 2px rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)" }}>
+                <div className="absolute inset-y-0 left-0 transition-transform duration-1000 ease-out"
+                  style={{
+                    width: totalVotes === 0 ? "0%" : `${yonseiPct}%`,
+                    background: "linear-gradient(to right, #1a6dff 0%, #1a6dff 60%, #3a2a6a 100%)",
+                    transformOrigin: "left",
+                    transform: animated ? "scaleX(1)" : "scaleX(0)",
+                  }} />
+                <div className="absolute inset-y-0 right-0 transition-transform duration-1000 ease-out"
+                  style={{
+                    width: totalVotes === 0 ? "0%" : `${koreaPct}%`,
+                    background: "linear-gradient(to left, #e8193e 0%, #e8193e 60%, #6a1a3a 100%)",
+                    transformOrigin: "right",
+                    transform: animated ? "scaleX(1)" : "scaleX(0)",
+                  }} />
+              </div>
+              {winnerSchool !== "tie" && (
+                <p className="mt-3 text-[11px] font-semibold">
+                  <span className={winnerSchool === "yonsei" ? "text-yonsei" : "text-korea"}>
+                    {winnerSchool === "yonsei" ? "연세대" : "고려대"}
+                  </span>
+                  <span className="text-muted"> 승리</span>
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === BEFORE REVEAL: Original live battle hero === */}
+      {!revealed && (
       <div
         className="relative text-center rounded-3xl pt-8 pb-6 px-5 mb-6 animate-card-rise overflow-hidden"
         style={{
@@ -122,6 +192,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
         </div>
         </div>
       </div>
+      )}
 
       {/* SVG filter for liquid glass refraction */}
       <svg className="absolute w-0 h-0">
@@ -218,43 +289,72 @@ export function VoteStats({ entries, votedIds, onPhotoClick }: VoteStatsProps) {
 
       {/* Ranking */}
       <div className="mt-6 animate-card-rise" style={{ animationDelay: "0.4s" }}>
-        <h3 className="text-sm font-semibold mb-3">인기 순위</h3>
-        {isAdmin ? (
+        <h3 className="text-sm font-semibold mb-3">
+          {revealed ? "최종 인기 순위" : "인기 순위"}
+          {revealMode === "preview" && <span className="ml-2 text-[10px] font-normal text-yellow-400">(미리보기)</span>}
+        </h3>
+        {revealed ? (
           <div className="space-y-3">
-            {[...entries]
-              .sort((a, b) => b.votes - a.votes)
-              .map((entry, i) => {
-                const medalStyles = ["bg-yellow-500/20 text-yellow-400", "bg-gray-400/20 text-gray-300", "bg-amber-600/20 text-amber-400"];
+            {/* Top 3 podium-style cards */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {sortedByVotes.slice(0, 3).map((entry, i) => {
+                const medalBg = ["from-yellow-400/30 to-yellow-600/10", "from-gray-300/30 to-gray-500/10", "from-amber-500/30 to-amber-700/10"][i];
+                const medalBorder = ["rgba(255,215,0,0.4)", "rgba(192,192,192,0.4)", "rgba(205,127,50,0.4)"][i];
+                const medalEmoji = ["1st", "2nd", "3rd"][i];
+                const medalColor = ["text-yellow-300", "text-gray-200", "text-amber-400"][i];
                 return (
                   <button
                     key={entry.id}
                     onClick={() => onPhotoClick(entry)}
-                    className="w-full flex items-center gap-3 rounded-2xl p-3 pr-4 text-left cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
-                    style={{
-                      background: i < 3 ? "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)" : "rgba(255,255,255,0.03)",
-                      border: `1px solid rgba(255,255,255,${i < 3 ? "0.08" : "0.05"})`,
-                    }}
+                    className={`relative rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-all bg-gradient-to-br ${medalBg}`}
+                    style={{ border: `1px solid ${medalBorder}`, boxShadow: i === 0 ? "0 4px 20px rgba(255,215,0,0.15)" : "0 2px 12px rgba(0,0,0,0.3)" }}
                   >
-                    <span className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold ${i < 3 ? medalStyles[i] : "text-muted"}`}>
-                      {i + 1}
-                    </span>
-                    <img src={entry.thumb_url || entry.image_url} alt={entry.nickname} className="w-11 h-11 rounded-xl object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{entry.nickname}</p>
-                      <p className={`text-[10px] font-semibold ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
-                        {entry.school === "yonsei" ? "연세대" : "고려대"}
-                      </p>
-                      {entry.location && (
-                        <p className="text-[9px] text-muted/60 truncate">{entry.location}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-base font-bold">{entry.votes}</p>
-                      <p className="text-[9px] text-muted">votes</p>
+                    <div className="aspect-[3/4] relative">
+                      <img src={entry.thumb_url || entry.image_url} alt={entry.nickname} className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className={`absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-[9px] font-black ${medalColor}`}>
+                        {medalEmoji}
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <p className="text-white text-xs font-bold truncate drop-shadow-md">{entry.nickname}</p>
+                        <p className="text-white/80 text-[10px] font-semibold drop-shadow-md">{entry.votes}표</p>
+                      </div>
                     </div>
                   </button>
                 );
               })}
+            </div>
+
+            {/* 4th and below as a list */}
+            {sortedByVotes.slice(3).map((entry, i) => {
+              const rank = i + 4;
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => onPhotoClick(entry)}
+                  className="w-full flex items-center gap-3 rounded-2xl p-3 pr-4 text-left cursor-pointer transition-all hover:scale-[1.01] active:scale-[0.99]"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                  }}
+                >
+                  <span className="w-7 h-7 flex items-center justify-center rounded-full text-xs font-bold text-muted">
+                    {rank}
+                  </span>
+                  <img src={entry.thumb_url || entry.image_url} alt={entry.nickname} className="w-11 h-11 rounded-xl object-cover" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{entry.nickname}</p>
+                    <p className={`text-[10px] font-semibold ${entry.school === "yonsei" ? "text-yonsei" : "text-korea"}`}>
+                      {entry.school === "yonsei" ? "연세대" : "고려대"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-bold">{entry.votes}</p>
+                    <p className="text-[9px] text-muted">votes</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         ) : (
           <div className="relative">

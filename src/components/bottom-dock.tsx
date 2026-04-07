@@ -9,6 +9,7 @@ interface BottomDockProps {
   onTabChange: (tab: Tab) => void;
   votedCount: number;
   isAdmin?: boolean;
+  revealed?: boolean;
 }
 
 const tabs: { value: Tab; label: string; icon: (active: boolean) => React.ReactNode }[] = [
@@ -56,7 +57,7 @@ const adminTab = {
   ),
 };
 
-export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin }: BottomDockProps) {
+export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin, revealed = false }: BottomDockProps) {
   const seenCountRef = useRef<number | null>(null);
 
   // Set baseline on initial load, then update when visiting voted tab
@@ -79,6 +80,7 @@ export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin }: Bott
       <nav className="pointer-events-auto">
         <div className="flex items-center gap-0.5 bg-surface/95 backdrop-blur-xl rounded-full px-1.5 py-1.5 shadow-2xl shadow-black/50 border border-border/50">
           {[...tabs, ...(isAdmin ? [adminTab] : [])].map((tab) => {
+            const label = revealed && tab.value === "stats" ? "명예의 전당" : tab.label;
             const isActive = activeTab === tab.value;
             return (
               <button
@@ -104,8 +106,8 @@ export function BottomDock({ activeTab, onTabChange, votedCount, isAdmin }: Bott
                 <span className={`relative transition-transform duration-300 ${isActive ? "scale-110" : "scale-100"}`}>
                   {tab.icon(isActive)}
                 </span>
-                <span className={`text-[10px] font-medium mt-0.5 transition-all duration-300 ${isActive ? "opacity-100" : "opacity-50"}`}>
-                  {tab.label}
+                <span className={`text-[10px] font-medium mt-0.5 transition-all duration-300 whitespace-nowrap ${isActive ? "opacity-100" : "opacity-50"}`}>
+                  {label}
                 </span>
 
                 {tab.value === "voted" && unseenCount > 0 && (

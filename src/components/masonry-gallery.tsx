@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react";
-import { PhotoEntry, School, VotingPeriod } from "@/lib/types";
+import { PhotoEntry, School, VotingPeriod, ResultAnnouncement, RevealMode } from "@/lib/types";
 import { fetchPhotos, fetchMyVotedIds, voteForPhoto, unvotePhoto, fetchAllVoteTimes } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
-import { fetchVotingPeriod, isVotingOpen, getVotingStatus } from "@/lib/admin";
+import { fetchVotingPeriod, fetchResultAnnouncement, isResultRevealed, isVotingOpen, getVotingStatus } from "@/lib/admin";
+import { getRevealPreview, subscribeRevealPreview } from "@/lib/reveal-preview";
 import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
@@ -166,6 +167,8 @@ export function MasonryGallery() {
   const [votingPeriod, setVotingPeriod] = useState<VotingPeriod | null>(null);
   const [showVotingAlert, setShowVotingAlert] = useState(false);
   const [votingLoaded, setVotingLoaded] = useState(false);
+  const [announcement, setAnnouncement] = useState<ResultAnnouncement | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
   const loaderRef = useRef<HTMLDivElement>(null);
 
   const canVote = isAdmin || isVotingOpen(votingPeriod);
@@ -176,7 +179,26 @@ export function MasonryGallery() {
       setVotingPeriod(vp);
       setVotingLoaded(true);
     });
+    fetchResultAnnouncement().then(setAnnouncement);
   }, []);
+
+  // Track admin preview mode toggle (localStorage-based, admin only)
+  useEffect(() => {
+    if (!isAdmin) {
+      setPreviewMode(false);
+      return;
+    }
+    setPreviewMode(getRevealPreview());
+    return subscribeRevealPreview(() => setPreviewMode(getRevealPreview()));
+  }, [isAdmin]);
+
+  // Compute reveal mode: revealed (everyone) > preview (admin only) > hidden
+  const revealMode: RevealMode = isResultRevealed(announcement)
+    ? "revealed"
+    : (isAdmin && previewMode)
+      ? "preview"
+      : "hidden";
+  const showResults = revealMode !== "hidden";
 
   const handleVote = useCallback(async (id: string) => {
     if (!user) {
@@ -304,6 +326,12 @@ export function MasonryGallery() {
       return true;
     });
   }, [entries]);
+
+  // Top 5 photo IDs by votes (used to gate location/settings reveal in modal)
+  const topRankIds = useMemo(() => {
+    const sorted = [...uniqueEntries].sort((a, b) => b.votes - a.votes).slice(0, 5);
+    return new Set(sorted.map((e) => e.id));
+  }, [uniqueEntries]);
 
   const sorted = useMemo(() => {
     let base = filter === "all" ? uniqueEntries : uniqueEntries.filter((e) => e.school === filter);
@@ -655,7 +683,12 @@ export function MasonryGallery() {
         )}
 
         {activeTab === "stats" && (
-          <VoteStats entries={uniqueEntries} votedIds={votedIds} onPhotoClick={setSelectedEntry} />
+          <VoteStats
+            entries={uniqueEntries}
+            votedIds={votedIds}
+            onPhotoClick={setSelectedEntry}
+            revealMode={revealMode}
+          />
         )}
 
         {activeTab === "voted" && (
@@ -686,6 +719,7 @@ export function MasonryGallery() {
         onTabChange={setActiveTab}
         votedCount={votedIds.size}
         isAdmin={isAdmin}
+        revealed={showResults}
       />
 
       <PhotoModal
@@ -697,6 +731,8 @@ export function MasonryGallery() {
         canVote={canVote}
         votingStatus={votingStatus}
         votingPeriod={votingPeriod}
+        revealMode={revealMode}
+        isTopRank={selectedEntry ? topRankIds.has(selectedEntry.id) : false}
       />
 
       {showLogin && <LoginPrompt onClose={() => setShowLogin(false)} />}

@@ -36,6 +36,12 @@ export interface VotingPeriod {
   end: string;
 }
 
+export interface ResultAnnouncement {
+  reveal_at: string;
+}
+
+export type RevealMode = "hidden" | "preview" | "revealed";
+
 export interface AdminUser {
   id: string;
   user_id: string;

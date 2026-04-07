@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { PhotoEntry, VotingPeriod } from "@/lib/types";
+import { PhotoEntry, VotingPeriod, RevealMode } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
 import { useAuth } from "./auth-provider";
 import { trackEvent } from "@/lib/analytics";
@@ -16,16 +16,20 @@ interface PhotoModalProps {
   canVote?: boolean;
   votingStatus?: "before" | "during" | "after";
   votingPeriod?: VotingPeriod | null;
+  revealMode?: RevealMode;
+  isTopRank?: boolean;
 }
 
-export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during", votingPeriod }: PhotoModalProps) {
+export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = true, votingStatus = "during", votingPeriod, revealMode = "hidden", isTopRank = false }: PhotoModalProps) {
   const { isAdmin } = useAuth();
   const [votePulse, setVotePulse] = useState(false);
   const [closing, setClosing] = useState(false);
   const [showInfoTeaser, setShowInfoTeaser] = useState(false);
+  const [showAdGate, setShowAdGate] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [visible, setVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const revealed = revealMode !== "hidden";
 
   // Record view (non-admin only)
   useEffect(() => {
@@ -240,7 +244,7 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
               {entry.club && (
                 <p className="text-sm text-muted mt-0.5">{entry.club}</p>
               )}
-              {isAdmin && entry.location && (
+              {isAdmin && !revealed && entry.location && (
                 <p className="text-xs text-muted/70 mt-0.5">{entry.location}</p>
               )}
             </div>
@@ -272,19 +276,82 @@ export function PhotoModal({ entry, voted, onVote, onUnvote, onClose, canVote = 
             </span>
           </button>
 
-          {/* Info teaser button */}
-          <button
-            onClick={() => { setShowInfoTeaser(true); if (!isAdmin) recordPhotoClick(entry.id); }}
-            className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-black bg-white hover:bg-white/90 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            촬영 스팟 및 설정값 보기
-          </button>
+          {/* Info section: behavior depends on reveal mode and rank */}
+          {!revealed ? (
+            <button
+              onClick={() => { setShowInfoTeaser(true); if (!isAdmin) recordPhotoClick(entry.id); }}
+              className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-black bg-white hover:bg-white/90 active:scale-[0.97] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              촬영 스팟 및 설정값 보기
+            </button>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {/* Location is always shown after reveal */}
+              <div className="rounded-2xl p-3 bg-white/5 border border-white/10 flex items-start gap-2.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-foreground/70 flex-shrink-0 mt-0.5">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted uppercase tracking-wider font-semibold">촬영 장소</p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5 break-words">
+                    {entry.location || "정보 없음"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Top 5 only: ad-gated camera settings button */}
+              {isTopRank && (
+                <button
+                  onClick={() => { setShowAdGate(true); trackEvent("ad_gate_click", { photo_id: entry.id }); }}
+                  className="relative w-full py-3 rounded-2xl text-sm font-semibold text-black overflow-hidden cursor-pointer active:scale-[0.97] transition-all duration-200"
+                  style={{
+                    background: "linear-gradient(135deg, #ffd700 0%, #ffb700 50%, #ff8a00 100%)",
+                    boxShadow: "0 4px 16px rgba(255,170,0,0.3)",
+                  }}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="23 7 16 12 23 17 23 7" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                    광고 보고 카메라 설정값 보기
+                  </span>
+                  <span className="absolute top-1 right-2 text-[9px] font-bold text-black/60">AD</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {showAdGate && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-modal-overlay-in" onClick={() => setShowAdGate(false)}>
+          <div className="bg-card rounded-3xl p-6 max-w-xs w-full text-center border border-white/10 animate-modal-in"
+            style={{ boxShadow: "0 25px 60px rgba(0,0,0,0.5)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="w-14 h-14 mx-auto mb-3 rounded-2xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #ffd700 0%, #ff8a00 100%)" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+              </svg>
+            </div>
+            <h3 className="text-base font-bold mb-1">준비 중입니다</h3>
+            <p className="text-xs text-muted mb-4">광고 시청 기능이 곧 추가됩니다.<br />조금만 기다려주세요!</p>
+            <button
+              onClick={() => setShowAdGate(false)}
+              className="w-full py-2.5 bg-white text-black text-sm font-semibold rounded-xl cursor-pointer active:scale-[0.97] transition-all"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
       {showInfoTeaser && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-modal-overlay-in" onClick={() => setShowInfoTeaser(false)}>
