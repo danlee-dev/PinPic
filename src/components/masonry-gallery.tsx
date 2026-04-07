@@ -401,10 +401,11 @@ export function MasonryGallery() {
               }
               if (burstCount <= 10) normalVotesSincePeak++;
             }
-            // Recovery threshold scales with platform average
-            const recoveryThreshold = Math.max(avgVotes * 3, 10);
+            // Recovery threshold scales with platform average (5x)
+            const recoveryThreshold = Math.max(avgVotes * 5, 15);
             const recoveryRate = Math.min(normalVotesSincePeak / recoveryThreshold, 1.0);
-            velocityPenalty = basePenalty + (1 - basePenalty) * recoveryRate;
+            // Cap recovery at 80% so abuse history is never fully erased
+            velocityPenalty = basePenalty + (1 - basePenalty) * recoveryRate * 0.8;
           }
 
           // 5) Personalization: demote already-voted photos

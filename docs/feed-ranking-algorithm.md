@@ -103,10 +103,10 @@ peak > 20  ->  base = 0.5 / (1 + log2(peak / 20))  (로그 감쇠)
 
 # Recovery (정상 투표 누적량 기반)
 normal_votes_since_peak = peak 이후 들어온 투표 중 1시간 윈도우 내 10표 이하 페이스인 것
-recovery_threshold = max(avg_votes * 3, 10)  (전체 평균의 3배)
+recovery_threshold = max(avg_votes * 5, 15)  (전체 평균의 5배)
 recovery_rate = min(normal_votes_since_peak / recovery_threshold, 1.0)
 
-final_penalty = base + (1 - base) * recovery_rate
+final_penalty = base + (1 - base) * recovery_rate * 0.8  (최대 80%까지만 회복)
 ```
 
 핵심 동작:
