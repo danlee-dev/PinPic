@@ -707,20 +707,41 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
           {/* Unlock CTA — centered plain inline text on the photo, no chrome */}
           <button
             onClick={(e) => { e.stopPropagation(); onUnlock(); }}
-            className={`mt-3 mx-auto flex items-center justify-center gap-1.5 font-bold cursor-pointer hover:opacity-90 transition-opacity leading-none w-full ${isHero ? "text-[12px]" : "text-[10px]"}`}
-            style={{
-              color: "transparent",
-              backgroundImage: "linear-gradient(135deg, #6aa3ff 0%, #ffffff 50%, #ff5b78 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))",
-            }}
+            className={`mt-3 mx-auto inline-flex items-center justify-center gap-1.5 font-bold cursor-pointer hover:opacity-90 transition-opacity leading-none w-full ${isHero ? "text-[12px]" : "text-[10px]"}`}
+            style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))" }}
           >
-            <svg width={isHero ? 11 : 9} height={isHero ? 11 : 9} viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block" style={{ filter: "drop-shadow(0 1px 4px rgba(0,0,0,0.95))" }}>
+            <svg
+              width={isHero ? 11 : 9}
+              height={isHero ? 11 : 9}
+              viewBox="0 0 24 24"
+              fill="none"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="block shrink-0"
+              style={{ stroke: `url(#unlockGrad-${rank})` }}
+            >
+              <defs>
+                <linearGradient id={`unlockGrad-${rank}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#6aa3ff" />
+                  <stop offset="50%" stopColor="#ffffff" />
+                  <stop offset="100%" stopColor="#ff5b78" />
+                </linearGradient>
+              </defs>
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
-            <span className="leading-none">TOP 10 비밀 전부 열기 · ₩990</span>
+            <span
+              className="leading-none"
+              style={{
+                color: "transparent",
+                backgroundImage: "linear-gradient(135deg, #6aa3ff 0%, #ffffff 50%, #ff5b78 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+              }}
+            >
+              TOP 10 비밀 전부 열기 · ₩990
+            </span>
           </button>
         </div>
       </div>
