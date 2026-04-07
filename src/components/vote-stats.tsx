@@ -393,10 +393,13 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
         <div className="fixed inset-x-0 bottom-24 z-30 flex justify-center px-4 pointer-events-none">
           <button
             onClick={() => openFakeDoor("sticky_bar")}
-            className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-black font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
+            className="pointer-events-auto relative w-full max-w-md flex items-center justify-between gap-3 px-5 py-3.5 rounded-full text-[#ffd166] font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
             style={{
-              background: "#ffffff",
-              boxShadow: "0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.15) inset",
+              background: "rgba(0,0,0,0.7)",
+              border: "1px solid rgba(255,209,102,0.35)",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,209,102,0.08) inset",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
             }}
           >
             <span className="flex items-center gap-2">
