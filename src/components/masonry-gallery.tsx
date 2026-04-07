@@ -541,7 +541,7 @@ export function MasonryGallery() {
                         border: "1px solid rgba(255,255,255,0.35)",
                       }}
                     >
-                      <span className="relative z-10">명예의 전당에서 순위 확인하기</span>
+                      <span className="relative z-10">순위 확인하기</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="relative z-10">
                         <polyline points="9 18 15 12 9 6" />
                       </svg>
