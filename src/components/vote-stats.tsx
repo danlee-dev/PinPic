@@ -354,11 +354,10 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
             className="relative w-full flex items-center justify-between gap-3 px-5 h-14 rounded-full text-white font-bold text-[13px] cursor-pointer active:scale-[0.98] transition-all overflow-hidden"
             style={{
               background: "linear-gradient(135deg, #1a6dff 0%, #1a6dff 25%, #6b1f8a 50%, #e8193e 75%, #e8193e 100%)",
-              border: "1px solid rgba(255,255,255,0.18)",
               boxShadow:
                 "inset 0 2px 4px rgba(255,255,255,0.25), " +
                 "inset 0 -2px 4px rgba(0,0,0,0.45), " +
-                "inset 0 0 0 1px rgba(255,255,255,0.06), " +
+                "inset 0 0 0 1px rgba(255,255,255,0.12), " +
                 "0 10px 28px rgba(0,0,0,0.5), " +
                 "0 4px 14px rgba(26,109,255,0.35), " +
                 "0 4px 14px rgba(232,25,62,0.35)",
