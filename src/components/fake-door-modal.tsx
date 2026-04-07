@@ -139,12 +139,6 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
               작가님들 동의 받아 정성스럽게 정리 중이에요.
             </p>
 
-            <div className="relative space-y-2 mb-5 px-1">
-              <Bullet>출시되면 가장 먼저 안내</Bullet>
-              <Bullet>얼리버드 사전 신청자 <strong className="text-yellow-300">무료</strong> 발송</Bullet>
-              <Bullet>첫 발송 명단 보장</Bullet>
-            </div>
-
             <button
               onClick={handleStartEmail}
               className="relative w-full py-3.5 rounded-2xl text-[14px] font-bold text-black cursor-pointer active:scale-[0.97] transition-all"
@@ -153,7 +147,7 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
                 boxShadow: "0 6px 20px rgba(255,170,0,0.35)",
               }}
             >
-              나오면 1순위로 받기
+              990원에 사전신청 하기
             </button>
             <button
               onClick={handleDismiss}
@@ -203,9 +197,12 @@ export function FakeDoorModal({ open, onClose, source }: FakeDoorModalProps) {
             >
               {submitting ? "신청 중..." : "사전 신청 완료"}
             </button>
-            <p className="relative text-[10.5px] text-muted/70 text-center mt-3 leading-relaxed">
-              ✓ 출시 알림 외에는 보내지 않아요
-            </p>
+            <button
+              onClick={handleDismiss}
+              className="relative w-full mt-2 py-2.5 text-[12px] font-medium text-muted hover:text-foreground transition-colors cursor-pointer"
+            >
+              취소
+            </button>
           </>
         )}
 

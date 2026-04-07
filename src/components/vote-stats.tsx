@@ -564,7 +564,7 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
               className={`font-black text-white ${isHero ? "text-[24px]" : isPodium ? "text-[16px]" : "text-[14px]"}`}
               style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}
             >
-              #{rank}
+              {rank}
             </span>
             <SchoolBadge school={entry.school} size="sm" />
           </div>
@@ -625,6 +625,7 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
             <span className="leading-none">TOP 10 비밀 전부 열기</span>
+            <span className="leading-none ml-0.5 opacity-90">· ₩990</span>
           </button>
         </div>
       </button>
