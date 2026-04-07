@@ -560,13 +560,13 @@ function TopCard({ entry, rank, variant, onPhotoClick, onUnlock }: TopCardProps)
       </div>
       <button
         onClick={onUnlock}
-        className="w-full py-3 text-[11px] font-semibold text-foreground/80 hover:bg-white/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+        className="w-full py-3 text-[11px] font-semibold text-foreground/80 hover:bg-white/5 border-t border-white/5 cursor-pointer transition-colors flex items-center justify-center gap-1.5 leading-none"
       >
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="block">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0110 0v4" />
         </svg>
-        TOP 10 비밀 전부 열기
+        <span className="leading-none">TOP 10 비밀 전부 열기</span>
       </button>
     </div>
   );
