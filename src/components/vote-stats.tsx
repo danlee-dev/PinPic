@@ -40,8 +40,11 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
     return () => clearTimeout(t);
   }, []);
 
-  // Replay confetti every time the user opens this tab in reveal mode
+  // Replay confetti every time the user opens this tab in reveal mode.
+  // Setting state inside an effect is intentional here: we want a fresh
+  // confetti key whenever the reveal flag flips on.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (revealed) setConfettiKey((k) => k + 1);
   }, [revealed]);
 
