@@ -228,13 +228,15 @@ export function MasonryGallery() {
   //  - admin preview toggle inverts what the admin sees relative to reality:
   //      before reveal: admin can preview the post-reveal screen
   //      after reveal:  admin can re-preview the pre-reveal (still-voting) screen
-  //  - revealMode === "preview" only when the admin is overriding reality
+  //  - revealMode reflects what the admin currently sees on-screen:
+  //      "revealed" = post-reveal UI, "hidden" = pre-reveal UI
+  //      "preview" is only used as a label hint when an admin override applies
   const actuallyRevealed = isResultRevealed(announcement);
   const adminOverriding = isAdmin && previewMode;
   const effectivelyRevealed = adminOverriding ? !actuallyRevealed : actuallyRevealed;
-  const revealMode: RevealMode = adminOverriding
-    ? "preview"
-    : (effectivelyRevealed ? "revealed" : "hidden");
+  const revealMode: RevealMode = effectivelyRevealed
+    ? (adminOverriding ? "preview" : "revealed")
+    : "hidden";
   const showResults = effectivelyRevealed;
 
   const handleVote = useCallback(async (id: string) => {
