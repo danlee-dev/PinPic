@@ -787,8 +787,9 @@ export function MasonryGallery() {
       </div>
 
 
-      {/* Fixed voting period banner */}
-      {votingLoaded && votingStatus !== "during" && !isAdmin && (
+      {/* Fixed voting period banner. Only between voting end and result reveal —
+          once results are out, the banner is unnecessary noise. */}
+      {votingLoaded && votingStatus !== "during" && !isAdmin && !showResults && (
         <div className="fixed top-40 left-0 right-0 z-30 flex justify-center pointer-events-none">
           <div className="bg-black/70 backdrop-blur-sm text-white text-sm font-semibold px-6 py-3.5 rounded-full border border-white/20 shadow-lg pointer-events-auto">
             {votingStatus === "before"
