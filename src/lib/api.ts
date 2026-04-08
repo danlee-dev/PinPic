@@ -43,17 +43,22 @@ export async function fetchPhotos(
 }
 
 export async function fetchVoteOverrides(): Promise<Map<string, number>> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase.from("vote_overrides").select("photo_id, vote_offset");
-  if (error) {
-    console.error("Failed to fetch vote_overrides:", error);
+  // The vote_overrides table is locked down to admin-only SELECT, so we go
+  // through a server-side API route that uses the service role to fetch
+  // just the two fields the Hall of Fame needs (no notes, no audit trail).
+  try {
+    const res = await fetch("/api/public/vote-overrides", { cache: "no-store" });
+    if (!res.ok) return new Map();
+    const data = (await res.json()) as { photo_id: string; vote_offset: number }[];
+    const map = new Map<string, number>();
+    for (const row of data) {
+      map.set(row.photo_id, row.vote_offset);
+    }
+    return map;
+  } catch (err) {
+    console.error("Failed to fetch vote_overrides:", err);
     return new Map();
   }
-  const map = new Map<string, number>();
-  for (const row of (data || []) as { photo_id: string; vote_offset: number }[]) {
-    map.set(row.photo_id, row.vote_offset);
-  }
-  return map;
 }
 
 export async function fetchTotalVoters(): Promise<number> {
