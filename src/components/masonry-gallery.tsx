@@ -175,6 +175,7 @@ export function MasonryGallery() {
   const [sortBy, setSortBy] = useState<"recommended" | "random" | "latest">("recommended");
   const [selectedEntry, setSelectedEntry] = useState<PhotoEntry | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+  const [votedIdsLoaded, setVotedIdsLoaded] = useState(false);
   const [voteTimes, setVoteTimes] = useState<Map<string, number[]>>(new Map());
   const [activeTab, setActiveTabState] = useState<Tab>("feed");
   const setActiveTab = useCallback((tab: Tab) => {
@@ -305,9 +306,14 @@ export function MasonryGallery() {
   // Reload voted ids when user changes
   useEffect(() => {
     if (user) {
-      fetchMyVotedIds().then(setVotedIds);
+      setVotedIdsLoaded(false);
+      fetchMyVotedIds().then((ids) => {
+        setVotedIds(ids);
+        setVotedIdsLoaded(true);
+      });
     } else {
       setVotedIds(new Set());
+      setVotedIdsLoaded(true);
     }
   }, [user]);
 
@@ -773,7 +779,7 @@ export function MasonryGallery() {
             entries={uniqueEntries}
             votedIds={votedIds}
             onPhotoClick={setSelectedEntry}
-            loading={uniqueEntries.length === 0 && loading}
+            loading={(uniqueEntries.length === 0 && loading) || !votedIdsLoaded}
           />
         )}
 
