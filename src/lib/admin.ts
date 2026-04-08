@@ -641,7 +641,16 @@ export async function fetchAnalyticsInsights(): Promise<AnalyticsInsights> {
 
   // ---- Hourly time series ----
   const hourlyMap = new Map<string, { opens: number; clicks: number; submits: number }>();
-  const bucket = (iso: string) => iso.slice(0, 13).replace("T", " ") + ":00"; // YYYY-MM-DD HH:00
+  // Bucket UTC ISO timestamps into KST (UTC+9) hour bands so the chart
+  // matches Korean wall-clock time instead of UTC.
+  const bucket = (iso: string) => {
+    const kst = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
+    const yyyy = kst.getUTCFullYear();
+    const mm = String(kst.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(kst.getUTCDate()).padStart(2, "0");
+    const hh = String(kst.getUTCHours()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd} ${hh}:00`;
+  };
   const ensure = (h: string) => {
     if (!hourlyMap.has(h)) hourlyMap.set(h, { opens: 0, clicks: 0, submits: 0 });
     return hourlyMap.get(h)!;
