@@ -265,7 +265,7 @@ export function AdminPanel() {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 pt-20 pb-28">
-        <Spinner size="md" />
+        <Spinner size="md" label="관리자 데이터 불러오는 중..." />
       </div>
     );
   }

@@ -3,6 +3,7 @@
 import { useMemo, useCallback, useSyncExternalStore } from "react";
 import { PhotoEntry } from "@/lib/types";
 import { SchoolBadge } from "./school-badge";
+import { Spinner } from "./spinner";
 
 function useColCount() {
   const subscribe = useCallback((cb: () => void) => {
@@ -46,11 +47,20 @@ interface MyVotesProps {
   entries: PhotoEntry[];
   votedIds: Set<string>;
   onPhotoClick: (entry: PhotoEntry) => void;
+  loading?: boolean;
 }
 
-export function MyVotes({ entries, votedIds, onPhotoClick }: MyVotesProps) {
+export function MyVotes({ entries, votedIds, onPhotoClick, loading = false }: MyVotesProps) {
   const colCount = useColCount();
   const votedEntries = entries.filter((e) => votedIds.has(e.id));
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 pt-20 pb-28">
+        <Spinner size="md" label="내 투표 불러오는 중..." />
+      </div>
+    );
+  }
 
   if (votedEntries.length === 0) {
     return (

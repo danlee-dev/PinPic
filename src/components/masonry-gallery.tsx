@@ -751,7 +751,7 @@ export function MasonryGallery() {
               )}
             />
             <div ref={loaderRef} className="flex justify-center py-8">
-              {loading && <Spinner size="sm" />}
+              {loading && <Spinner size="sm" label="더 불러오는 중..." />}
               {!hasMore && entries.length > 0 && (
                 <p className="text-sm text-muted">모든 사진을 불러왔어요</p>
               )}
@@ -773,6 +773,7 @@ export function MasonryGallery() {
             entries={uniqueEntries}
             votedIds={votedIds}
             onPhotoClick={setSelectedEntry}
+            loading={uniqueEntries.length === 0 && loading}
           />
         )}
 
