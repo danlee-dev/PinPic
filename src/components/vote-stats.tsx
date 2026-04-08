@@ -21,10 +21,14 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
   const [fakeDoorOpen, setFakeDoorOpen] = useState(false);
   const [fakeDoorSource, setFakeDoorSource] = useState("sticky_bar");
   const [voteOverrides, setVoteOverrides] = useState<Map<string, number>>(new Map());
+  const [overridesLoaded, setOverridesLoaded] = useState(false);
 
   // Load vote overrides once on mount (only used to skew the displayed TOP 10)
   useEffect(() => {
-    fetchVoteOverrides().then(setVoteOverrides);
+    fetchVoteOverrides().then((m) => {
+      setVoteOverrides(m);
+      setOverridesLoaded(true);
+    });
   }, []);
   const revealed = revealMode !== "hidden";
 
@@ -418,7 +422,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
           {revealMode === "preview" && <span className="ml-2 text-[10px] font-normal text-red-400">(미리보기)</span>}
         </h3>
         {revealed ? (
-          entries.length === 0 ? (
+          (entries.length === 0 || !overridesLoaded) ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <div className="w-7 h-7 border-2 border-white/15 border-t-white rounded-full animate-spin" />
               <p className="text-[11px] text-muted">결과를 불러오는 중...</p>
