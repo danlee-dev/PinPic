@@ -11,6 +11,7 @@ import {
   fetchVotingPeriod,
   updateVotingPeriod,
   fetchResultAnnouncement,
+  isResultRevealed,
   updateResultAnnouncement,
   fetchAdmins,
   addAdmin,
@@ -716,8 +717,14 @@ export function AdminPanel() {
             <div className="mt-4 pt-4 border-t border-border/30">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold">결과 화면 미리보기</p>
-                  <p className="text-[10px] text-muted mt-0.5">관리자 본인에게만 발표 화면이 보입니다</p>
+                  <p className="text-xs font-semibold">
+                    {isResultRevealed(announcement) ? "투표 중 화면 미리보기" : "결과 화면 미리보기"}
+                  </p>
+                  <p className="text-[10px] text-muted mt-0.5">
+                    {isResultRevealed(announcement)
+                      ? "관리자 본인에게만 발표 전(투표 중) 화면이 보입니다"
+                      : "관리자 본인에게만 발표 화면이 보입니다"}
+                  </p>
                 </div>
                 <button
                   onClick={handleTogglePreview}
