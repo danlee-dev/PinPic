@@ -7,6 +7,7 @@ import { FakeDoorModal } from "./fake-door-modal";
 import { SchoolBadge } from "./school-badge";
 import { trackEvent } from "@/lib/analytics";
 import { fetchVoteOverrides, recordFakeDoorClick } from "@/lib/api";
+import { Spinner } from "./spinner";
 
 interface VoteStatsProps {
   entries: PhotoEntry[];
@@ -423,10 +424,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
         </h3>
         {revealed ? (
           (entries.length === 0 || !overridesLoaded) ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="w-7 h-7 border-2 border-white/15 border-t-white rounded-full animate-spin" />
-              <p className="text-[11px] text-muted">결과를 불러오는 중...</p>
-            </div>
+            <Spinner size="md" label="결과를 불러오는 중..." className="py-20" />
           ) : (
           <div className="pb-28">
             <p className="text-[11px] text-muted mb-4">{totalVotes.toLocaleString()}명이 선택한 단 10장. 나머지는 잠겨 있어요.</p>

@@ -28,6 +28,7 @@ import {
 } from "@/lib/admin";
 import { getRevealPreview, setRevealPreview } from "@/lib/reveal-preview";
 import { SchoolBadge } from "./school-badge";
+import { Spinner } from "./spinner";
 
 type AdminTab = "pending" | "photos" | "clicks" | "original" | "settings";
 
@@ -263,8 +264,8 @@ export function AdminPanel() {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 pt-20 pb-28 text-center">
-        <div className="w-6 h-6 mx-auto border-2 border-border border-t-foreground rounded-full animate-spin" />
+      <div className="max-w-3xl mx-auto px-4 pt-20 pb-28">
+        <Spinner size="md" />
       </div>
     );
   }

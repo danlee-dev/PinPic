@@ -10,6 +10,7 @@ import { useAuth } from "./auth-provider";
 import { PhotoCard } from "./photo-card";
 import { PhotoModal } from "./photo-modal";
 import { BottomDock, Tab } from "./bottom-dock";
+import { Spinner } from "./spinner";
 import { VoteStats } from "./vote-stats";
 import { trackEvent } from "@/lib/analytics";
 import { MyVotes } from "./my-votes";
@@ -750,9 +751,7 @@ export function MasonryGallery() {
               )}
             />
             <div ref={loaderRef} className="flex justify-center py-8">
-              {loading && (
-                <div className="w-6 h-6 border-2 border-border border-t-foreground rounded-full animate-spin" />
-              )}
+              {loading && <Spinner size="sm" />}
               {!hasMore && entries.length > 0 && (
                 <p className="text-sm text-muted">모든 사진을 불러왔어요</p>
               )}
