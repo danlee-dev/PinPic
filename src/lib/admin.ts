@@ -144,10 +144,10 @@ export async function fetchFakeDoorStats(): Promise<FakeDoorStats> {
     from += pageSize;
   }
 
-  // Filter to events that happened after the configured voting start
-  const votingPeriod = await fetchVotingPeriod();
-  const startMs = votingPeriod ? new Date(votingPeriod.start).getTime() : 0;
-  const rows = allRows.filter((r) => new Date(r.created_at).getTime() >= startMs);
+  // Filter to events that happened after the result reveal time
+  const announcement = await fetchResultAnnouncement();
+  const revealMs = announcement ? new Date(announcement.reveal_at).getTime() : Number.POSITIVE_INFINITY;
+  const rows = allRows.filter((r) => new Date(r.created_at).getTime() >= revealMs);
 
   // by source
   const sourceMap = new Map<string, number>();
@@ -263,23 +263,23 @@ function bucket(rows: { user_id: string | null }[]): StageBucket {
 
 export async function fetchResultStats(): Promise<ResultStats> {
   const supabase = getSupabase();
-  const [opens, fd, waitlist, photos, adminRows, votingPeriod] = await Promise.all([
+  const [opens, fd, waitlist, photos, adminRows, announcement] = await Promise.all([
     fetchAllRows<RawRow>("photo_modal_opens", "user_id, photo_id, source, created_at", supabase),
     fetchAllRows<RawRow>("fake_door_clicks", "user_id, photo_id, source, created_at", supabase),
     fetchAllRows<WaitlistRaw>("waitlist", "email, user_id, source, created_at", supabase),
     fetchAllRows<PhotoMeta>("photos", "id, nickname, school", supabase),
     fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
-    fetchVotingPeriod(),
+    fetchResultAnnouncement(),
   ]);
 
-  // Filter out admin self-traffic + anything that happened before voting started
+  // Filter out admin self-traffic + anything that happened before result reveal
   const adminIds = new Set(adminRows.map((a) => a.user_id));
   const isNotAdmin = (uid: string | null) => !uid || !adminIds.has(uid);
-  const startMs = votingPeriod ? new Date(votingPeriod.start).getTime() : 0;
-  const afterStart = (iso: string) => new Date(iso).getTime() >= startMs;
-  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id) && afterStart(o.created_at));
-  const safeFD = fd.filter((f) => isNotAdmin(f.user_id) && afterStart(f.created_at));
-  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id) && afterStart(w.created_at));
+  const revealMs = announcement ? new Date(announcement.reveal_at).getTime() : Number.POSITIVE_INFINITY;
+  const afterReveal = (iso: string) => new Date(iso).getTime() >= revealMs;
+  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id) && afterReveal(o.created_at));
+  const safeFD = fd.filter((f) => isNotAdmin(f.user_id) && afterReveal(f.created_at));
+  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id) && afterReveal(w.created_at));
 
   const photoMap = new Map<string, PhotoMeta>();
   photos.forEach((p) => photoMap.set(p.id, p));
@@ -492,24 +492,24 @@ async function fetchAllRows<T>(table: string, select: string, supabase: ReturnTy
 export async function fetchAnalyticsInsights(): Promise<AnalyticsInsights> {
   const supabase = getSupabase();
 
-  const [opens, fakeDoor, waitlist, votes, photos, adminRows, votingPeriod] = await Promise.all([
+  const [opens, fakeDoor, waitlist, votes, photos, adminRows, announcement] = await Promise.all([
     fetchAllRows<RawRow>("photo_modal_opens", "user_id, photo_id, source, created_at", supabase),
     fetchAllRows<RawRow>("fake_door_clicks", "user_id, photo_id, source, created_at", supabase),
     fetchAllRows<WaitlistRaw>("waitlist", "email, user_id, source, created_at", supabase),
     fetchAllRows<VoteRaw>("votes", "voter_id, photo_id, created_at", supabase),
     fetchAllRows<PhotoMeta>("photos", "id, nickname, school", supabase),
     fetchAllRows<{ user_id: string }>("admins", "user_id", supabase),
-    fetchVotingPeriod(),
+    fetchResultAnnouncement(),
   ]);
 
-  // Filter out admin self-traffic + anything that happened before voting started
+  // Filter out admin self-traffic + anything that happened before result reveal
   const adminIds = new Set(adminRows.map((a) => a.user_id));
   const isNotAdmin = (uid: string | null) => !uid || !adminIds.has(uid);
-  const startMs = votingPeriod ? new Date(votingPeriod.start).getTime() : 0;
-  const afterStart = (iso: string) => new Date(iso).getTime() >= startMs;
-  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id) && afterStart(o.created_at));
-  const safeFD = fakeDoor.filter((f) => isNotAdmin(f.user_id) && afterStart(f.created_at));
-  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id) && afterStart(w.created_at));
+  const revealMs = announcement ? new Date(announcement.reveal_at).getTime() : Number.POSITIVE_INFINITY;
+  const afterReveal = (iso: string) => new Date(iso).getTime() >= revealMs;
+  const safeOpens = opens.filter((o) => isNotAdmin(o.user_id) && afterReveal(o.created_at));
+  const safeFD = fakeDoor.filter((f) => isNotAdmin(f.user_id) && afterReveal(f.created_at));
+  const safeWL = waitlist.filter((w) => isNotAdmin(w.user_id) && afterReveal(w.created_at));
 
   const photoMap = new Map<string, PhotoMeta>();
   photos.forEach((p) => photoMap.set(p.id, p));
