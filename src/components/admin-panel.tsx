@@ -311,13 +311,15 @@ export function AdminPanel() {
         </div>
       )}
 
-      {/* Admin sub-tabs */}
+      {/* Admin sub-tabs. "원본 순위" only shows when ?debug=1 is in the URL */}
       <div className="flex gap-1 mb-4 bg-surface rounded-xl p-1 overflow-x-auto hide-scrollbar">
         {([
           ["pending", `대기 (${pending.length})`],
           ["photos", "사진"],
           ["clicks", "관심도"],
-          ["original", "원본 순위"],
+          ...(typeof window !== "undefined" && new URLSearchParams(window.location.search).get("debug") === "1"
+            ? [["original", "원본 순위"] as const]
+            : []),
           ["settings", "설정"],
         ] as const).map(([value, label]) => (
           <button
