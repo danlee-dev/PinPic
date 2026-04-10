@@ -565,7 +565,7 @@ export function MasonryGallery() {
 
       <div key={activeTab} className="animate-page-in">
         {activeTab === "feed" && (
-          <main className="max-w-3xl mx-auto px-4 pt-2 pb-28">
+          <main className="max-w-3xl mx-auto px-3 pt-2 pb-28">
             {/* Hero section with poster banner */}
             <div className="relative text-center mb-6 animate-card-rise overflow-hidden rounded-3xl"
             >
