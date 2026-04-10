@@ -75,9 +75,9 @@ function MasonryGrid({
   );
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-x-1">
       {columns.map((col, c) => (
-        <div key={c} className="flex-1 min-w-0">
+        <div key={c} className="flex-1 min-w-0 space-y-3">
           {col.map(({ item, globalIndex }) => renderItem(item, globalIndex))}
         </div>
       ))}

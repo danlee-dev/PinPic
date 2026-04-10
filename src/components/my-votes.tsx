@@ -125,14 +125,14 @@ function MyVotesMasonry({
   );
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-x-1">
       {columns.map((col, c) => (
-        <div key={c} className="flex-1 min-w-0">
+        <div key={c} className="flex-1 min-w-0 space-y-3">
           {col.map(({ item: entry, globalIndex: i }) => (
             <button
               key={entry.id}
               onClick={() => onPhotoClick(entry)}
-              className="w-full mb-3 group cursor-pointer bg-transparent border-none p-0 text-left animate-card-rise"
+              className="w-full group cursor-pointer bg-transparent border-none p-0 text-left animate-card-rise"
               style={{ animationDelay: `${Math.min(i, 8) * 0.06}s` }}
             >
               <div className="relative rounded-2xl overflow-hidden bg-surface transition-all duration-300 group-hover:shadow-xl group-hover:shadow-black/30">

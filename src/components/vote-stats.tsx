@@ -450,7 +450,7 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                 else right.push({ entry, rank });
               });
               const renderCard = ({ entry, rank }: { entry: PhotoEntry; rank: number }) => (
-                <div key={entry.id} className="mb-3">
+                <div key={entry.id}>
                   <TopCard
                     entry={entry}
                     rank={rank}
@@ -461,11 +461,11 @@ export function VoteStats({ entries, votedIds, onPhotoClick, revealMode = "hidde
                 </div>
               );
               return (
-                <div className="mt-4 flex gap-3">
-                  <div className="flex-1 min-w-0">
+                <div className="mt-4 flex gap-x-1">
+                  <div className="flex-1 min-w-0 space-y-3">
                     {left.map(renderCard)}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-3">
                     {right.map(renderCard)}
                   </div>
                 </div>
